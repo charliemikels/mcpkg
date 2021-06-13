@@ -1,0 +1,12 @@
+# Don't commit compiled code: (Files w/o extensions)
+# Ignore all
+*
+
+# Unignore all files with extensions
+!*.*
+
+# Unignore all dirs
+!*/
+
+# Ignore sample http returns
+*sample.json
