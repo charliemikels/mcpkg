@@ -10,3 +10,7 @@
 
 # Ignore sample http returns
 *sample.json
+
+# Ignore config files
+# TODO: Create a sample config file
+config.json

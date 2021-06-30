@@ -38,7 +38,7 @@ struct ModrinthModResult {
 }
 
 struct HitList {
-	hits       []ModResult
+	hits       []ModrinthModResult
 	offset     int
 	limit      int
 	total_hits int
