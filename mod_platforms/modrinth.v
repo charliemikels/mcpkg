@@ -3,6 +3,7 @@ module mod_platforms
 import net
 import net.http
 import json
+import math
 
 // define platform
 fn modrinth() ModPlatform  {
@@ -37,7 +38,7 @@ struct ModrinthModResult {
 	host           string
 }
 
-struct HitList {
+struct ModrinthHitList {
 	hits       []ModrinthModResult
 	offset     int
 	limit      int
@@ -46,33 +47,69 @@ struct HitList {
 
 fn modrinth_list_mods(f SearchFilter) []Mod {
 
-
 	// prepare html request
-	config := http.FetchConfig{
+	config_1 := http.FetchConfig{
 		// See https://github.com/modrinth/labrinth/wiki/API-Documentation
 		params: map{
 			'query': ''//f.name
 			// 'version': 'version="$f.version"'
-			'limit': f.limit.str()
+			'limit': '100' //f.limit.str()
+			// 'offset': ----
 		}
 	}
 
 	// make the request
-	responce := http.fetch('https://api.modrinth.com/api/v1/mod', config) or {
+	responce_1 := http.fetch('https://api.modrinth.com/api/v1/mod', config_1) or {
 		println('http.fetch() failed')
 		panic(err)
 	}
 
 	// Parse json results structs
-	hits := json.decode(HitList, responce.text) or {
+	hit_list_1 := json.decode(ModrinthHitList, responce_1.text) or {
 		println('JSON failed to decode responce.text from Modrinth.')
 		panic(err)
 	}
 
+
+
+	mut mod_result_list := []ModrinthModResult{}
+	mod_result_list << hit_list_1.hits
+
+	// calculate needed cycles to get full list.
+	cycles := int(math.ceil(f64(hit_list_1.total_hits) / 100.0))	// total items / slice. round up
+
+	// reppetedly make requests to finish list.
+	for n in 1..cycles {
+		config_n := http.FetchConfig{
+			// See https://github.com/modrinth/labrinth/wiki/API-Documentation
+			params: map{
+				'query': ''//f.name
+				// 'version': 'version="$f.version"'
+				'limit': '100' //f.limit.str()
+				'offset': '${100*n}'
+			}
+		}
+
+		// make the request
+		responce_n := http.fetch('https://api.modrinth.com/api/v1/mod', config_n) or {
+			println('http.fetch() failed')
+			panic(err)
+		}
+
+		// Parse json results structs
+		hit_list_n := json.decode(ModrinthHitList, responce_n.text) or {
+			println('JSON failed to decode responce.text from Modrinth.')
+			panic(err)
+		}
+		mod_result_list << hit_list_n.hits
+	}
+
+
+
 	// Convert hits into mcpkg mod list
 	mut mod_list := []Mod{}
 
-	for i, mod in hits.hits {
+	for mod in mod_result_list {
 		mod_list << Mod{
 			host: modrinth()
 			id: mod.mod_id

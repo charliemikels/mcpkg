@@ -46,14 +46,15 @@ struct ModPlatform {
 pub fn list_all_mods() {
 	for platform in mod_platforms {
 		// println(mod_platforms)
-		println('mods from $platform.name: ')
-		println(platform.list_mods( SearchFilter{limit: -1} ))
+		// println('mods from $platform.name: ')
+		list_of_mods := platform.list_mods( SearchFilter{limit: -1} )
+		println(list_of_mods.len)
 
 		// mod_list := platform.list_mods( SearchFilter{limit: 0} )
 
-		// for mod in mod_list {
-		// 	println('\t$mod.title')
-		// }
+		for i, mod in list_of_mods {
+			println('$i\t$mod.title')
+		}
 
 	}
 }

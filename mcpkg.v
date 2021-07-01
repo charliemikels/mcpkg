@@ -11,8 +11,6 @@ import mod_platforms
 
 
 
-
-
 // get_search(): Demo fn to get OS arguments into the http request
 // fn get_search() string {
 // 	if '-S' in cmdline.only_options(os.args) {
@@ -21,13 +19,24 @@ import mod_platforms
 // 	return ''
 // }
 
-fn main() {
+struct McpkgConf {
+	mod_dir		string
+	// threads	int // when multithreaded
+}
 
-	// tmp commands
+// fn parse_commands() {
+//
+// }
+
+fn main() {
+	// parse commands
+
+	// load configs
+
 
 	mod_platforms.list_all_mods()
 
-	println('yay')
+	// println('yay')
 
 	// list mods
 	// for i, mod in hits.hits {
