@@ -6,7 +6,7 @@ import json
 import math
 
 // define platform
-fn modrinth() ModPlatform  {
+fn modrinth() ModPlatform {
 	return ModPlatform{
 		name: 'Modrinth'
 		base_url: 'https://modrinth.com/'
@@ -46,14 +46,14 @@ struct ModrinthHitList {
 }
 
 fn modrinth_list_mods(f SearchFilter) []Mod {
-
-	// prepare html request
+	// prepare initial html request
 	config_1 := http.FetchConfig{
 		// See https://github.com/modrinth/labrinth/wiki/API-Documentation
 		params: map{
-			'query': ''//f.name
+			'query': '' // f.name
 			// 'version': 'version="$f.version"'
-			'limit': '100' //f.limit.str()
+			// 'version': 'version="1.16.3" OR version="1.16.2" OR version="1.16.1"'
+			'limit': '100' // f.limit.str()
 			// 'offset': ----
 		}
 	}
@@ -70,23 +70,22 @@ fn modrinth_list_mods(f SearchFilter) []Mod {
 		panic(err)
 	}
 
-
-
 	mut mod_result_list := []ModrinthModResult{}
 	mod_result_list << hit_list_1.hits
 
 	// calculate needed cycles to get full list.
-	cycles := int(math.ceil(f64(hit_list_1.total_hits) / 100.0))	// total items / slice. round up
+	cycles := int(math.ceil(f64(hit_list_1.total_hits) / 100.0)) // total items / slice. round up
 
 	// reppetedly make requests to finish list.
-	for n in 1..cycles {
+	for n in 1 .. cycles {
 		config_n := http.FetchConfig{
 			// See https://github.com/modrinth/labrinth/wiki/API-Documentation
 			params: map{
-				'query': ''//f.name
+				'query':  '' // f.name
 				// 'version': 'version="$f.version"'
-				'limit': '100' //f.limit.str()
-				'offset': '${100*n}'
+				// 'version': 'version="1.16.3" OR version="1.16.2" OR version="1.16.1"'
+				'limit':  '100' // f.limit.str()
+				'offset': '${100 * n}'
 			}
 		}
 
@@ -103,8 +102,6 @@ fn modrinth_list_mods(f SearchFilter) []Mod {
 		}
 		mod_result_list << hit_list_n.hits
 	}
-
-
 
 	// Convert hits into mcpkg mod list
 	mut mod_list := []Mod{}

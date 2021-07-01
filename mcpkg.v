@@ -6,10 +6,7 @@ module main
 // import json
 // import os
 // import os.cmdline
-
 import mod_platforms
-
-
 
 // get_search(): Demo fn to get OS arguments into the http request
 // fn get_search() string {
@@ -20,7 +17,7 @@ import mod_platforms
 // }
 
 struct McpkgConf {
-	mod_dir		string
+	mod_dir string
 	// threads	int // when multithreaded
 }
 
@@ -32,7 +29,6 @@ fn main() {
 	// parse commands
 
 	// load configs
-
 
 	mod_platforms.list_all_mods()
 
