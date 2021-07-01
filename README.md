@@ -1,37 +1,48 @@
 # MCPKG
-A package manager for Minecraft mods
+A tool to update Minecraft mods written in V.
 
-:warning: Right now, this is a **very** work in progress project and it is far from usable or stable. It will explode your computer. (It shouldn't, but please treat it like it might.)
+:warning: Right now, this is a **very** work in progress project and it is far from usable or stable. 
 
 ![A screenshot of mcpkg being built and ran](README_assets/demo_screenshot.png "MCPKG screenshot")
 
 ## About
-MCPKG is a **work in progress** tool to automatically download and update Minecraft mods.
+MCPKG is a **work in progress** tool to automatically download and update Minecraft mods. 
 
-I plan to support searching, downloading, and updating mods from [Modrinth](https://modrinth.com/), an open source collection of open source Minecraft mods. In the future, I'd also like to support from other mod platforms and Resource/Data pack management, but Modrinth is a first priority.
+When 1.0 is done, MCPKG will scan you installed mods and compare their version number to the ones online. If the local mods are older, it will try to update them to the new ones. 
 
-## Dependancies and running MCPKG
-MCPKG is currently written in [V](https://github.com/vlang/v), but it currently doesn't need any extra dependencies.
+The primary mod platform that I'll support for 1.0 will be [Modrinth](https://modrinth.com/), an open source collection of open source Minecraft mods with a very nice api. However, I plan to code flexibly enough so that new sources could be added in the future.
 
-After installing V, clone and enter this repo and type `v run .` to start mcpkg. If you want to build the project, it's simply `v .`.
+## Wishlist
+I'd like to call this section "planned features," but right now I'm only 'planning' to get the bare minimum done. Here's some features that I'd like to have, but might not get to. 
 
-V is also available in the [AUR](https://aur.archlinux.org/packages/vlang/).
+Features wishlist:
+- [ ] Notify user when a new version of a mod is available.
+- [ ] Download mods to mods folder
+- [ ] Combine first two into a nice script
+- [ ] Handle dependencies / library mods
+- [ ] Search for and install new mods
+- [ ] Upgrade all mods to new preferred version of Minecraft. 
+- [ ] Mod folders / profiles (eg `1.16`, `1.17 Optifine`, `1.17 Sodium`)
+- [ ] Texture / resource packs support?
+- [ ] Shader pack support???
 
-## Using MCPKG
-MCPKG is unfinished, so not all of these options are implemented
+Sources wishlist:
+- [ ] Modrinth
+- [ ] Github
+- [ ] Fabric
+- [ ] Forge?
+- [ ] Optifine
+- [ ] Curseforge?
+- [ ] Planet Minecraft??
 
-Planned usage cheat sheet:
+## Dependencies and running MCPKG
+MCPKG is written in [V](https://vlang.io/), but it doesn't need any other dependancies.
 
-| Option | Name | Description | Example |
-| ------ | ---- | ----------- | ------- |
-| `-h` | Help | Returns a simple help text similar to this table | `mcpkg -h` |
-| `-s mod_name`   | Search | Searches for a mod of a given name. | `mcpkg -s sodium` |
-| `-i mod_name`   | Install | Same as search, but after the mod is found it will try to download it. If it's already installed, it will ask if you want to update. | `mcpkg -s sodium` |
-| `-v version_number`   | Version | Limits a search to a version of Minecraft. | `mcpkg -i sodium -v 1.16` |
-| `-u mod_name`   | Update mod | Essentially the same as -i. If it's not already installed, it will ask if you want to install the mod. | `mcpkg -u sodium` |
-| `-u` | Update All | Scans the list of installed mods and will try to find and install updates for them | `mcpkg -u` |
-| `--mod_dir dir` | Specify Directory | This will redefine a mod installation directory to `dir` | `mcpkg -u --mod_dir ~/tekkit_mods` |
+After installing V, clone and enter this repo and type `v run .` to start mcpkg. If you want to build the project, it's simply `v .`. 
 
-<!-- | `--source source_name` | Specify Source | Specifies a specific mod source (When supported) | `mcpkg -s sodium --source curseforge` | -->
+You can install V from
+- [V's website](https://vlang.io/)
+- [V's Github](https://github.com/vlang/v)
+- [The AUR](https://aur.archlinux.org/packages/vlang/)
+	- This version may be a bit out of date since is still under rapid development.
 
-If no options are given, MCPKG will run with `-u`. And if there's only a string, it will run `-u mod_name`
