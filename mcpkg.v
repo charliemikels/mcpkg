@@ -3,10 +3,10 @@ module main
 // import net
 // import net.http
 // import net.html
-// import json
-// import os
+import json
+import os
 // import os.cmdline
-import mod_platforms
+import mod_platforms as mp
 
 // get_search(): Demo fn to get OS arguments into the http request
 // fn get_search() string {
@@ -21,25 +21,40 @@ struct McpkgConf {
 	// threads	int // when multithreaded
 }
 
-// fn parse_commands() {
-//
-// }
 
 fn main() {
-	// parse commands
+	// Load config files
+	// TODO
+	settings := McpkgConf{
+		mod_dir: './'	// TODO, provide an actual path when done
+									// TODO, set path based on current OS (eg: ~/.minecraft/mods/ if linux)
+	}
 
-	// load configs
+	// --== Main outline ==--
 
-	mod_platforms.list_all_mods()
+	// Load local mod list
+	// create_example_local_list()
+	mod_list_path := settings.mod_dir+'./local_mod_list.json'
+	local_mod_list := load_local_mod_json(mod_list_path)
+	// println(local_mod_list)
 
-	// println('yay')
+	// Download and compare remote info about local mods
 
-	// list mods
-	// for i, mod in hits.hits {
-	// 	// println('$i - $mod.title: $mod.description')
-	// 	println(mod)
-	// 	break
+	mp.get_mod_info( 'modrinth', 'AANobbMI' )
+	// for lm in local_mod_list.mods {
+	// 	mp.get_mod_info( lm.source, lm.id )
+	// 	println(lm.name)
 	// }
+
+
+	// Limit remote mods to selected game version.
+
+	// If local mod version is less than remote versions:
+	// Prompt user of updates and prepare download
+
+	// Update local mod list
+
+
 
 	return
 }

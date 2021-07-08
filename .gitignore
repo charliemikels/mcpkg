@@ -4,6 +4,7 @@
 
 # Unignore all files with extensions
 !*.*
+!.*
 
 # Unignore all dirs
 !*/
@@ -14,3 +15,7 @@
 # Ignore config files
 # TODO: Create a sample config file
 config.json
+
+# Ignore generated files
+mod_list.json
+local_mod_list*.json
