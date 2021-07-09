@@ -5,29 +5,26 @@ import net.http
 import json
 import math
 
-
-// List of expected game versions in order: https://api.modrinth.com/api/v1/tag/game_version
-
 // define platform
 fn modrinth() ModPlatform {
 	return ModPlatform{
 		name: 'Modrinth'
 		base_url: 'https://modrinth.com/'
 		list_mods: modrinth_list_mods
-		get_mod_info: modrinth_get_mod_info
+		get_mod_details: modrinth_get_mod_details
 		download_mod: modrinth_download_mod
 	}
 }
 
 // structs for parsing json
-struct ModrinthModResult {	// used with ModrinthHitList
+struct ModrinthModResult { // used with ModrinthHitList
 	mod_id         string
 	slug           string
 	author         string
 	title          string
 	description    string
 	categories     []string // Do not parse to enums, they might add new catagories.
-	versions       []string // TODO: parse into versions struct
+	versions       []string
 	downloads      int
 	follows        int
 	page_url       string
@@ -42,68 +39,66 @@ struct ModrinthModResult {	// used with ModrinthHitList
 	host           string
 }
 
-struct ModrinthHitList {	// Used with GET https://api.modrinth.com/api/v1/mod/
+struct ModrinthHitList { // Snippit of mod info, usefull in list of mods. Used with GET https://api.modrinth.com/api/v1/mod/
 	hits       []ModrinthModResult
 	offset     int
 	limit      int
 	total_hits int
 }
 
-// struct ModrinthMod {	// more detailed than mod result. Used with GET https://api.modrinth.com/api/v1/mod/{ID}/
-// 	id string
-// 	slug string
-// 	// team	string	// the team that owns the mod
-// 	title string
-// 	description string
-// 	// body string // long description
-// 	// body_url string // Deprecated
-// 	published string	// datetime
-// 	updated string	// datetime
-// 	// status string // approved / rejected / draft / unlisted / processing
-// 	// license License{}
-// 	client_side string // required, optional, unsupported, unknown.
-// 	server_side string // required, optional, unsupported, unknown.
-// 	downloads int
-// 	// categories []string
-// 	versions []int 	// list of version IDs
-// 	// icon_url string?
-// 	// issues_url
-// 	// source_url
-// 	// wiki_url
-// 	// discord_url
-// 	// donation_urls []Donation_link
-// }
+struct ModrinthMod { // more detailed than mod result. Used with GET https://api.modrinth.com/api/v1/mod/${id}/
+	id   string
+	slug string
+	// team				string	// the team that owns the mod
+	title       string
+	description string
+	body        string // long description
+	// body_url string	// Deprecated
+	published string // datetime
+	updated   string // datetime
+	// status string // approved / rejected / draft / unlisted / processing
+	// license License{}
+	client_side string // required, optional, unsupported, unknown.
+	server_side string // required, optional, unsupported, unknown.
+	downloads   int
+	// categories []string
+	versions []int // list of version IDs
+	// icon_url string?
+	// issues_url
+	// source_url
+	// wiki_url
+	// discord_url
+	// donation_urls []Donation_link
+}
 
 // struct ModrinthLicense {}
 // struct ModrinthDonationLink {}
 
-struct ModrinthVersion {
-	id	string
-	mod_id string
+struct ModrinthVersion { // Used with GET https://api.modrinth.com/api/v1/mod/${id}/version
+	id        string
+	mod_id    string
 	author_id string
 	// featured userID
-	name string
+	name           string
 	version_number string
 	// change_log "string?"
 	date_published string
 	// downloads int
-	version_type string // alpha, beta, release
-	files []ModrinthVersionFile
-	dependencies []int // version IDs of dependancies
-	game_version []string //array of game versison
-	loaders []string //'array of mod loaders'
+	version_type  string // alpha, beta, release
+	files         []ModrinthVersionFile
+	dependencies  []int    // version IDs of dependancies
+	game_versions []string // array of game versison
+	loaders       []string //'array of mod loaders'
 }
 
 struct ModrinthVersionFile {
-	hashes map[string]string
-	url string
+	hashes   map[string]string
+	url      string
 	filename string
 }
 
-
-
 // platform.list_mods:
-fn modrinth_list_mods(/*f SearchFilter*/) []Mod {
+fn modrinth_list_mods() []Mod { // fn(f SearchFilter). Looks like /*...*/ comments were removed or something.
 	// prepare initial html request
 	config_1 := http.FetchConfig{
 		// See https://github.com/modrinth/labrinth/wiki/API-Documentation
@@ -138,7 +133,7 @@ fn modrinth_list_mods(/*f SearchFilter*/) []Mod {
 
 	// reppetedly make requests to finish list.
 	for n in 1 .. cycles {
-		println('Modrinth: Making request ${n+1} out of ${cycles}') // request 1 is actualy request 0
+		println('Modrinth: Making request ${n + 1} out of $cycles') // request 1 is actualy request 0
 
 		config_n := http.FetchConfig{
 			// See https://github.com/modrinth/labrinth/wiki/API-Documentation
@@ -186,40 +181,71 @@ fn modrinth_list_mods(/*f SearchFilter*/) []Mod {
 	return mod_list
 }
 
-fn modrinth_get_mod_info( mod_id string) {
-	// Terra has a lot of versions. Good for testing: FIlZB9L0
+// platform.get_mod_details
+fn modrinth_get_mod_details(m Mod) ModDetailed {
+	// Terra has a lot of versions. id: FIlZB9L0
 	// Sodium: AANobbMI
-	println('Modrinth: Looking up info about $mod_id')
+	println('Modrinth: Looking up info about $m.id')
 
 	// Looks like the api doesn't actualy use the 'local-' part of the ID. Let's remove it
-	id := if 'local-' in mod_id { mod_id[6..] } else { mod_id }
-	// println(id)
+	id := if 'local-' in m.id { m.id[6..] } else { m.id }
 
+	// Prep API requests. I think we can get away with only one config.
 	config := http.FetchConfig{
 		// See https://github.com/modrinth/labrinth/wiki/API-Documentation
 		params: map{
 			'index': 'updated'
 			'limit': '100'
 			// 'offset': ----
+			// TODO: Limit versions to current prefered game version
 		}
 	}
 
-	responce := http.fetch('https://api.modrinth.com/api/v1/mod/$id/version', config) or {
-		// println('http.fetch() failed')
-		panic(err)
+	// Make api requests	// TODO: make paralel
+	// Fetch detailed mod info
+	responce_mod := http.fetch('https://api.modrinth.com/api/v1/mod/$id', config) or { panic(err) }
+	mod := json.decode(ModrinthMod, responce_mod.text) or { panic(err) }
+
+	// Fetch version info
+	responce_versions := http.fetch('https://api.modrinth.com/api/v1/mod/$id/version',
+		config) or { panic(err) }
+	versions := json.decode([]ModrinthVersion, responce_versions.text) or { panic(err) }
+
+	// Convert into generalized structs
+	mut generalized_versions := []Version{}
+	for mv in versions {
+		// in case of multiple files
+		mut files_list := []VersionFile{}
+		for f in mv.files {
+			files_list << VersionFile{
+				hashes: f.hashes
+				url: f.url
+				filename: f.filename
+			}
+		}
+
+		generalized_versions << Version{
+			id: mv.id
+			mod: m
+			name: mv.name
+			version_number: mv.version_number
+			version_type: mv.version_type
+			game_versions: mv.game_versions
+			date_published: mv.date_published
+			files: files_list
+		}
 	}
 
-	// Parse json results structs
-	versions := json.decode([]ModrinthVersion, responce.text) or {
-		panic(err)
+	detailed_mod := ModDetailed{
+		Mod: m
+		long_description: mod.body
+		mod_versions: generalized_versions
 	}
 
-	println(versions)
-
-
+	return detailed_mod
 }
 
 // platform.download_mod:
-fn modrinth_download_mod( mod_id_version string ) string {
+fn modrinth_download_mod(mod_id_version string) string {
 	return 'Mod downloading WIP.'
 }
