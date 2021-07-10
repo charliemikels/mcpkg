@@ -65,16 +65,28 @@ fn main() {
 	// --== TMP ==--
 	search := mp.SearchFilter{
 		// query: 'sodium'
-		query: ''
+		// query: 'fabric'
 		platform_name: 'modrinth'
-		// game_versions:
+		game_versions: ['1.16.1', '1.16.2', '1.16.3']
+		// game_versions: ['']
 	}
 	mods := mp.search_for_mods(search) or {
 		eprintln(err)
 		return
 	}
 
+	println('Total mods returned: $mods.len')
 	// println(mods)
+	// mut wanted_mods := []mp.Mod{}
+	// for m in mods {
+	// 	for v in versions {
+	// 		if v in m.game_versions {
+	// 			wanted_mods << m
+	// 			break
+	// 		}
+	// 	}
+	// }
+	// println('Mods with versions in $versions: $wanted_mods.len')
 
 	return
 }

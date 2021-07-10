@@ -104,23 +104,38 @@ fn modrinth_make_mod_request(filter SearchFilter, limit int, cycle int) Modrinth
 	offset := limit * cycle
 	index := if filter.query == '' { 'updated' } else { 'relevance' }
 
-	mut version_string := ''
-	// format: 'version="1.16" OR version="1.16.1" OR version="1.16.2"'
-	for v in filter.game_versions {
-		if version_string == '' {
-			version_string = 'version="$v"'
-		} else {
-			version_string += ' OR version="$v"'
+	// build game_version facets
+	mut facet_versions := ''
+	if filter.game_versions !in [ [''], [] ] {
+		// println('There are game versions')
+		for v in filter.game_versions {
+			facet_versions += '"versions:$v",'
 		}
+		facet_versions = '[' + facet_versions[..facet_versions.len-1] + ']'
 	}
 
-	p := map{
+	// build facets string
+	mut facets := '[' + facet_versions + ']'
+
+	// build final paramaters map
+	mut p := map{
 		'limit':   '$limit'
 		'offset':  '$offset'
 		'index':   index
 		'query':   filter.query
-		'version': version_string
+		// 'versions': version_string
 	}
+
+	// retroactively add in facets
+	if facets != '[]' {
+		p['facets'] = facets
+	}
+	// Facets are funky. If they're given nothing, then facets are ignored,
+	// but if its '' or '[]', then they remove the other results, trying to
+	// apply a non-existant filter. This doesn't play well with V's no nulls
+	// rule, so I have to conditionally add it in after the fact.
+
+	// println('cycle $cycle is using these params: $p')
 
 	// make the request
 	config := http.FetchConfig{
@@ -138,14 +153,18 @@ fn modrinth_make_mod_request(filter SearchFilter, limit int, cycle int) Modrinth
 		panic(err)
 	}
 
+	// println('cycle $cycle is done, and got $hit_list.hits.len hits out of $hit_list.total_hits')
+
 	return hit_list
 }
 
 // platform.get_mods_by_search:
 fn modrinth_get_mods_by_search(filter SearchFilter) []Mod {
 	println('Modrinth: Making request 1')
+
 	// Make http request
-	request_limit := 500
+	request_limit := 100
+
 	hit_list_1 := modrinth_make_mod_request(filter, request_limit, 0)
 
 	mut mod_result_list := []ModrinthModResult{}
@@ -153,6 +172,8 @@ fn modrinth_get_mods_by_search(filter SearchFilter) []Mod {
 
 	// calculate needed cycles to get full list.
 	cycles := int(math.ceil(f64(hit_list_1.total_hits) / f64(request_limit))) // total items / slice. round up
+
+	// println('Pass 1 returned $hit_list_1.hits.len items. There are $hit_list_1.total_hits in total, and we plan to make $cycles requests of $request_limit mods each.')
 
 	// reppetedly make requests to finish list.
 	mut threads := []thread ModrinthHitList{}

@@ -34,6 +34,7 @@ fn get_platform_by_name(name string) ?ModPlatform {
 pub struct Mod {
 	host          string
 	platform      ModPlatform [skip] // when encoding to JSON, it should ignore platform since it has functions.
+pub:
 	id            string
 	slug          string // like Title, but url safe and stuff
 	author        string
