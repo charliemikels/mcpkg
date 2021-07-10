@@ -11,10 +11,12 @@ const (
 struct ModPlatform {
 	name      string
 	base_url  string
-	list_mods fn () []Mod // fn (SearchFilter)
-	// get_mod_details_from_id fn (string) //data
-	get_mod_details fn (Mod) ModDetailed
-	download_mod    fn (string) string
+	// list_mods 						fn () []Mod // fn (SearchFilter)
+	get_mods_by_search 		fn (SearchFilter) []Mod
+	get_mod_details_by_id fn (string, SearchFilter) Mod
+	re_get_mod 						fn (Mod, SearchFilter) Mod	// For updates
+	get_mod_details 			fn (Mod) ModDetailed
+	// download_mod    			fn (string) string // download_version fn (Version) 	// Do we need to call the API for this? we're already given a URL in VersionFile
 }
 
 fn get_platform_by_name(name string) ?ModPlatform {
@@ -31,7 +33,7 @@ fn get_platform_by_name(name string) ?ModPlatform {
 // Mod is a generalized struct to display basic mod information. Use this for a long list of mods.
 pub struct Mod {
 	host string
-	// platform			// TODO: We're doing a lot of for loops to get the platform, but we can't store the functions of Mod Platform in Json. Implement and do this lookup once at json import
+	platform			ModPlatform [skip]	// when encoding to JSON, it should ignore platform since it has functions.
 	id            string
 	slug          string // like Title, but url safe and stuff
 	author        string
@@ -50,13 +52,17 @@ pub fn (m Mod) get_platform() ?ModPlatform {
 	return get_platform_by_name(m.host)
 }
 
-pub fn (m Mod) get_detailed() ModDetailed {
-	p := m.get_platform() or {
-		eprintln('Mod $m.title ($m.id) did not have a valid platform.')
-		panic(err)
-	}
-	return p.get_mod_details(m)
-}
+// THERE IS A COMPILER ERROR HERE:
+// At the return in can't convert the Mod* `m` to a Mod
+//
+// pub fn (m Mod) get_detailed() ModDetailed {
+// 	// Find the struct that hosts the mod
+// 	p := m.get_platform() or {
+// 		eprintln('Mod $m.title ($m.id) did not have a valid platform.')
+// 		panic(err)
+// 	}
+// 	return p.get_mod_details(m)
+// }
 
 // ModDetailed is similar to Mod, but holds extra information including the list of versions.
 pub struct ModDetailed {
@@ -93,12 +99,21 @@ pub struct VersionFile {
 	filename string
 }
 
-// struct SearchFilter {
-// 	name         string
-// 	game_version string
-// 	limit        int = 10
-// }
+pub struct SearchFilter {
+pub:
+	query        	string
+	game_versions []string
+	platform_name string	// Usefull outside of module
+}
 
+pub fn search_for_mods(filter SearchFilter) ?[]Mod {
+	p := get_platform_by_name(filter.platform_name) or { return err }
+	return p.get_mods_by_search(filter)
+}
+
+
+
+// Right now, the APIs are light and fast enough that we really don't need to cache a lot of remote stuff
 //
 // struct RemoteModListFile {
 // 	file_version		string
@@ -106,11 +121,11 @@ pub struct VersionFile {
 // 	remote_mod_list	[]RemoteModList
 // }
 //
-struct RemoteModList {
-	platform     string // json cant do the functions, se let's just use the name
-	last_updated string // datetime?
-	mods         []Mod
-}
+// struct RemoteModList {
+// 	platform     string // json cant do the functions, se let's just use the name
+// 	last_updated string // datetime?
+// 	mods         []Mod
+// }
 
 // WIP
 // pub fn update_mod_list(/*[]RemoteModList*/) /*RemoteModListFile*/  {

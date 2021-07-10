@@ -10,9 +10,10 @@ fn modrinth() ModPlatform {
 	return ModPlatform{
 		name: 'Modrinth'
 		base_url: 'https://modrinth.com/'
-		list_mods: modrinth_list_mods
+		// list_mods: modrinth_list_mods
+		get_mods_by_search: modrinth_get_mods_by_search
 		get_mod_details: modrinth_get_mod_details
-		download_mod: modrinth_download_mod
+		// download_mod: modrinth_download_mod
 	}
 }
 
@@ -30,12 +31,12 @@ struct ModrinthModResult { // used with ModrinthHitList
 	page_url       string
 	icon_url       string
 	author_url     string
-	date_created   string // TODO: Date time type?
-	date_modified  string // TODO: Date time type?
-	latest_version string // TODO: parse into versions struct
+	date_created   string // IDEA: Date time type?
+	date_modified  string // IDEA: Date time type?
+	latest_version string
 	license        string
-	client_side    string // TODO?: Enum (Optional, Required, other?)
-	server_side    string // TODO?: Enum (Optional, Required, other?)
+	client_side    string // IDEA?: Enum (Optional, Required, other?)
+	server_side    string // IDEA?: Enum (Optional, Required, other?)
 	host           string
 }
 
@@ -97,75 +98,77 @@ struct ModrinthVersionFile {
 	filename string
 }
 
-// platform.list_mods:
-fn modrinth_list_mods() []Mod { // fn(f SearchFilter). Looks like /*...*/ comments were removed or something.
-	// prepare initial html request
-	config_1 := http.FetchConfig{
-		// See https://github.com/modrinth/labrinth/wiki/API-Documentation
-		params: map{
-			'index': 'updated'
-			'limit': '100'
-			// 'offset': ----
+// Since modrinth won't return a full list for /api/v1/mods, we can use this helper fn to make multipule requests easier
+fn modrinth_make_mod_request(filter SearchFilter, limit int, cycle int) ModrinthHitList {
+	// Prepare Modrinth Request
+	offset := limit * cycle
+	index := if filter.query == '' { 'updated' } else { 'relevance' }
+
+	mut version_string := ''
+	// format: 'version="1.16" OR version="1.16.1" OR version="1.16.2"'
+	for v in filter.game_versions {
+		if version_string == '' {
+			version_string = 'version="$v"'
+		} else {
+			version_string += ' OR version="$v"'
 		}
 	}
 
-	println('Modrinth: Making request 1')
+	p := map{
+		'limit': 		'$limit'
+		'offset': 	'$offset'
+		'index': 		index
+		'query': 		filter.query
+		'version':	version_string
+	}
 
 	// make the request
-	responce_1 := http.fetch('https://api.modrinth.com/api/v1/mod', config_1) or {
+	config := http.FetchConfig{
+		params: p
+	}
+
+	responce := http.fetch('https://api.modrinth.com/api/v1/mod', config) or {
 		println('http.fetch() failed')
 		panic(err)
 	}
 
-	// Parse json results structs
-	hit_list_1 := json.decode(ModrinthHitList, responce_1.text) or {
+	// Decode JSON
+	hit_list := json.decode(ModrinthHitList, responce.text) or {
 		println('JSON failed to decode responce.text from Modrinth.')
 		panic(err)
 	}
 
+	return hit_list
+}
+
+// platform.get_mods_by_search:
+fn modrinth_get_mods_by_search(filter SearchFilter) []Mod {
+	println('Modrinth: Making request 1')
+	// Make http request
+	request_limit := 500
+	hit_list_1 := modrinth_make_mod_request(filter, request_limit, 0)
+
 	mut mod_result_list := []ModrinthModResult{}
 	mod_result_list << hit_list_1.hits
 
-	// println('Request 1 done')
-
 	// calculate needed cycles to get full list.
-	cycles := int(math.ceil(f64(hit_list_1.total_hits) / 100.0)) // total items / slice. round up
+	cycles := int(math.ceil(f64(hit_list_1.total_hits) / f64(request_limit))) // total items / slice. round up
 
 	// reppetedly make requests to finish list.
+	// TODO: see Spawning Concurrent Tasks https://github.com/vlang/v/blob/master/doc/docs.md#spawning-concurrent-tasks
+	// mut threads := []thread ModrinthHitList{}
 	for n in 1 .. cycles {
 		println('Modrinth: Making request ${n + 1} out of $cycles') // request 1 is actualy request 0
-
-		config_n := http.FetchConfig{
-			// See https://github.com/modrinth/labrinth/wiki/API-Documentation
-			params: map{
-				'query':  '' // f.name
-				// 'version': 'version="$f.version"'
-				// 'version': 'version="1.16.3" OR version="1.16.2" OR version="1.16.1"'
-				'limit':  '100' // f.limit.str()
-				'offset': '${100 * n}'
-			}
-		}
-
-		// make the request
-		responce_n := http.fetch('https://api.modrinth.com/api/v1/mod', config_n) or {
-			println('http.fetch() failed')
-			panic(err)
-		}
-
-		// Parse json results structs
-		hit_list_n := json.decode(ModrinthHitList, responce_n.text) or {
-			println('JSON failed to decode responce.text from Modrinth.')
-			panic(err)
-		}
+		hit_list_n := modrinth_make_mod_request(filter, request_limit, 0)
 		mod_result_list << hit_list_n.hits
 	}
 
 	// Convert hits into mcpkg mod list
 	mut mod_list := []Mod{}
-
 	for mod in mod_result_list {
 		mod_list << Mod{
 			host: modrinth().name
+			platform: modrinth()
 			id: mod.mod_id
 			slug: mod.slug
 			author: mod.author
@@ -178,6 +181,7 @@ fn modrinth_list_mods() []Mod { // fn(f SearchFilter). Looks like /*...*/ commen
 			date_modified: mod.date_modified
 		}
 	}
+
 	return mod_list
 }
 
@@ -188,7 +192,7 @@ fn modrinth_get_mod_details(m Mod) ModDetailed {
 	println('Modrinth: Looking up info about $m.id')
 
 	// Looks like the api doesn't actualy use the 'local-' part of the ID. Let's remove it
-	id := if 'local-' in m.id { m.id[6..] } else { m.id }
+	id := if m.id.contains('local-') { m.id[6..] } else { m.id }
 
 	// Prep API requests. I think we can get away with only one config.
 	config := http.FetchConfig{

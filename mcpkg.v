@@ -6,7 +6,7 @@ module main
 // import json
 // import os
 // import os.cmdline
-// import mod_platforms as mp
+import mod_platforms as mp
 
 // use https://api.modrinth.com/api/v1/tag/game_version to get a list of game versions in order.
 // IDEA: Use this to compare if a game version is newer or older than others.
@@ -34,19 +34,17 @@ struct McpkgConf {
 }
 
 fn main() {
-	// Load config files
-	// TODO
-	settings := McpkgConf{
-		mod_dir: './' // TODO, provide an actual path when done
-		// TODO, set path based on current OS (eg: ~/.minecraft/mods/ if linux)
-	}
+	// TODO: Load config files
+	// mut settings := McpkgConf{
+	// 	mod_dir: './'
+	// }
 
 	// --== Main outline ==--
 
 	// Load local mod list
 	// create_example_local_list()
-	mod_list_path := settings.mod_dir + './local_mod_list.json'
-	local_mod_list := load_local_mod_json(mod_list_path)
+	// mod_list_path := settings.mod_dir + './local_mod_list.json'
+	// local_mod_list := load_local_mod_json(mod_list_path)
 	// println(local_mod_list)
 
 	// Download and compare remote info about local mods
@@ -63,6 +61,20 @@ fn main() {
 	// Prompt user of updates and prepare download
 
 	// Update local mod list
+
+	// --== TMP ==--
+	search := mp.SearchFilter{
+		// query: 'sodium'
+		query: ''
+		platform_name: 'modrinth'
+		// game_versions:
+	}
+	mods := mp.search_for_mods(search) or {
+		eprintln(err)
+		return
+	}
+
+	// println(mods)
 
 	return
 }
