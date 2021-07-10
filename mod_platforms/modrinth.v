@@ -155,13 +155,18 @@ fn modrinth_get_mods_by_search(filter SearchFilter) []Mod {
 	cycles := int(math.ceil(f64(hit_list_1.total_hits) / f64(request_limit))) // total items / slice. round up
 
 	// reppetedly make requests to finish list.
-	// TODO: see Spawning Concurrent Tasks https://github.com/vlang/v/blob/master/doc/docs.md#spawning-concurrent-tasks
-	// mut threads := []thread ModrinthHitList{}
-	for n in 1 .. cycles {
-		println('Modrinth: Making request ${n + 1} out of $cycles') // request 1 is actualy request 0
-		hit_list_n := modrinth_make_mod_request(filter, request_limit, 0)
-		mod_result_list << hit_list_n.hits
+	mut threads := []thread ModrinthHitList{}
+	for c in 1 .. cycles {
+		println('Modrinth: Starting request ${c + 1} out of $cycles') // request 1 is actualy request 0
+		threads << go modrinth_make_mod_request(filter, request_limit, c)
 	}
+	threaded_hit_lists := threads.wait()
+	println('all requests done')
+	// println('len mod_len pre = ${mod_result_list.len}')
+	for thl in threaded_hit_lists {
+		mod_result_list << thl.hits
+	}
+	// println('len mod_len post = ${mod_result_list.len}')
 
 	// Convert hits into mcpkg mod list
 	mut mod_list := []Mod{}
