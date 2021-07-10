@@ -115,11 +115,11 @@ fn modrinth_make_mod_request(filter SearchFilter, limit int, cycle int) Modrinth
 	}
 
 	p := map{
-		'limit': 		'$limit'
-		'offset': 	'$offset'
-		'index': 		index
-		'query': 		filter.query
-		'version':	version_string
+		'limit':   '$limit'
+		'offset':  '$offset'
+		'index':   index
+		'query':   filter.query
+		'version': version_string
 	}
 
 	// make the request
@@ -155,7 +155,7 @@ fn modrinth_get_mods_by_search(filter SearchFilter) []Mod {
 	cycles := int(math.ceil(f64(hit_list_1.total_hits) / f64(request_limit))) // total items / slice. round up
 
 	// reppetedly make requests to finish list.
-	mut threads := []thread ModrinthHitList{}
+	mut threads := []thread mod_platforms.ModrinthHitList{}
 	for c in 1 .. cycles {
 		println('Modrinth: Starting request ${c + 1} out of $cycles') // request 1 is actualy request 0
 		threads << go modrinth_make_mod_request(filter, request_limit, c)

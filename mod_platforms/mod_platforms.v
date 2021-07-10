@@ -9,13 +9,13 @@ const (
 
 // ModPlatforms is a holder for some basic info and functions to generalize various platform APIs
 struct ModPlatform {
-	name      string
-	base_url  string
+	name     string
+	base_url string
 	// list_mods 						fn () []Mod // fn (SearchFilter)
-	get_mods_by_search 		fn (SearchFilter) []Mod
+	get_mods_by_search    fn (SearchFilter) []Mod
 	get_mod_details_by_id fn (string, SearchFilter) Mod
-	re_get_mod 						fn (Mod, SearchFilter) Mod	// For updates
-	get_mod_details 			fn (Mod) ModDetailed
+	re_get_mod            fn (Mod, SearchFilter) Mod // For updates
+	get_mod_details       fn (Mod) ModDetailed
 	// download_mod    			fn (string) string // download_version fn (Version) 	// Do we need to call the API for this? we're already given a URL in VersionFile
 }
 
@@ -32,8 +32,8 @@ fn get_platform_by_name(name string) ?ModPlatform {
 
 // Mod is a generalized struct to display basic mod information. Use this for a long list of mods.
 pub struct Mod {
-	host string
-	platform			ModPlatform [skip]	// when encoding to JSON, it should ignore platform since it has functions.
+	host          string
+	platform      ModPlatform [skip] // when encoding to JSON, it should ignore platform since it has functions.
 	id            string
 	slug          string // like Title, but url safe and stuff
 	author        string
@@ -101,17 +101,15 @@ pub struct VersionFile {
 
 pub struct SearchFilter {
 pub:
-	query        	string
+	query         string
 	game_versions []string
-	platform_name string	// Usefull outside of module
+	platform_name string // Usefull outside of module
 }
 
 pub fn search_for_mods(filter SearchFilter) ?[]Mod {
 	p := get_platform_by_name(filter.platform_name) or { return err }
 	return p.get_mods_by_search(filter)
 }
-
-
 
 // Right now, the APIs are light and fast enough that we really don't need to cache a lot of remote stuff
 //
