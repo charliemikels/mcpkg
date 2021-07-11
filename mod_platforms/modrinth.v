@@ -106,12 +106,12 @@ fn modrinth_make_mod_request(filter SearchFilter, limit int, cycle int) Modrinth
 
 	// build game_version facets
 	mut facet_versions := ''
-	if filter.game_versions !in [ [''], [] ] {
+	if filter.game_versions !in [[''], []] {
 		// println('There are game versions')
 		for v in filter.game_versions {
 			facet_versions += '"versions:$v",'
 		}
-		facet_versions = '[' + facet_versions[..facet_versions.len-1] + ']'
+		facet_versions = '[' + facet_versions[..facet_versions.len - 1] + ']'
 	}
 
 	// build facets string
@@ -119,10 +119,10 @@ fn modrinth_make_mod_request(filter SearchFilter, limit int, cycle int) Modrinth
 
 	// build final paramaters map
 	mut p := map{
-		'limit':   '$limit'
-		'offset':  '$offset'
-		'index':   index
-		'query':   filter.query
+		'limit':  '$limit'
+		'offset': '$offset'
+		'index':  index
+		'query':  filter.query
 		// 'versions': version_string
 	}
 
