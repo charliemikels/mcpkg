@@ -7,6 +7,7 @@ import json
 import os
 import os.cmdline
 import mod_platforms as mp
+import term
 
 // use https://api.modrinth.com/api/v1/tag/game_version to get a list of game versions in order.
 // IDEA: Use this to compare if a game version is newer or older than others.
@@ -95,8 +96,7 @@ fn get_config() ?AppConfig {
 		// After all this, let's stop the program. If the user wanted to use the defaults, they wouldn't have passed -c.
 		return error('Invalid path. No json config file found at `$arg_path`')
 		// end of (arg_path != '')
-	}
-	else {
+	} else {
 		// The user did not pass -c, we need to load a default path.
 
 		// Check current working dir first:
@@ -189,6 +189,33 @@ fn create_config(path string) ?AppConfig {
 	return config
 }
 
+fn print_mod_selection(mods []mp.Mod) {
+	max_spacing := mods.len.str().len
+	mut max_name_len := 0
+	for m in mods {
+		if m.title.len > max_name_len {
+			max_name_len = m.title.len
+		}
+	}
+	t_width, _ := term.get_terminal_size()
+	// reversed, so the most relevent item is desplayed last
+	mods_r := mods.reverse()
+	for i, m in mods_r {
+		spaces := ' '.repeat(max_spacing - (mods.len - i).str().len)
+		pre := '${mods.len - i}$spaces| '
+		title := '$m.title: '
+		description_width := t_width - pre.len - title.len
+		description := if description_width < m.description.len {
+			m.description[0..description_width - 3] + '...'
+		} else {
+			m.description
+		}
+		println('${mods.len - i}$spaces| $m.title: ${term.dim(description)}')
+		// println('(description_width | description)')
+	}
+	println('\nFound $mods.len mods')
+}
+
 fn main() {
 	// println(os.args)
 	// TODO: Load config files
@@ -224,19 +251,17 @@ fn main() {
 	// --== TMP ==--
 	search := mp.SearchFilter{
 		// query: 'sodium'
-		query: cmdline.option(os.args, '-S', '')
+		// query: cmdline.option(os.args, '-S', '')
 		// query: 'fabric'
 		platform_name: 'modrinth'
-		// game_versions: ['1.16.1', '1.16.2', '1.16.3']
+		game_versions: ['1.16.1', '1.16.2', '1.16.3']
 		// game_versions: ['']
 	}
 	mods := mp.search_for_mods(search) or {
 		eprintln(err)
 		return
 	}
-
-	println('Total mods returned: $mods.len')
-	// println(mods)
+	print_mod_selection(mods)
 
 	// mut wanted_mods := []mp.Mod{}
 	// for m in mods {

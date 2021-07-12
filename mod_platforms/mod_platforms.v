@@ -32,9 +32,11 @@ fn get_platform_by_name(name string) ?ModPlatform {
 
 // Mod is a generalized struct to display basic mod information. Use this for a long list of mods.
 pub struct Mod {
-	host          string
-	platform      ModPlatform [skip] // when encoding to JSON, it should ignore platform since it has functions.
+mut:
+	platform ModPlatform [skip]
 pub:
+	// Json can't do ModPlatform's functions, so skip them, and on load, figure it out from host
+	host          string
 	id            string
 	slug          string // like Title, but url safe and stuff
 	author        string
@@ -68,6 +70,7 @@ pub fn (m Mod) get_platform() ?ModPlatform {
 // ModDetailed is similar to Mod, but holds extra information including the list of versions.
 pub struct ModDetailed {
 	Mod // embeded struct, everything mod does, ModDetailed does naturaly
+pub:
 	long_description string
 	mod_versions     []Version
 	// extra_links		map[string]string	// Source, Website, Donations, etc.
@@ -75,6 +78,7 @@ pub struct ModDetailed {
 
 // Version holds information about a specific version of a mod.
 pub struct Version {
+pub:
 	id  string
 	mod Mod
 	// mod_id string
@@ -91,10 +95,11 @@ pub struct Version {
 // Modrinth supports multiple files per version. While it's not common,
 // it can be useful in some cases. eg: Bundling the documentation with
 // the mod. TODO: When downloading a version with more than one file,
-// ask which one to download, but reccomend the first with `.jar` at the end.
+// ask which one to download, but recomend the first with `.jar` at the end.
 
 // VersionFile
 pub struct VersionFile {
+pub:
 	hashes   map[string]string
 	url      string
 	filename string
@@ -107,60 +112,12 @@ pub:
 	platform_name string // Usefull outside of module
 }
 
+// --== mod_platform api: ==--
+
 pub fn search_for_mods(filter SearchFilter) ?[]Mod {
 	p := get_platform_by_name(filter.platform_name) or { return err }
 	return p.get_mods_by_search(filter)
 }
-
-// Right now, the APIs are light and fast enough that we really don't need to cache a lot of remote stuff
-//
-// struct RemoteModListFile {
-// 	file_version		string
-// 	last_updated		string // datetime?
-// 	remote_mod_list	[]RemoteModList
-// }
-//
-// struct RemoteModList {
-// 	platform     string // json cant do the functions, se let's just use the name
-// 	last_updated string // datetime?
-// 	mods         []Mod
-// }
-
-// WIP
-// pub fn update_mod_list(/*[]RemoteModList*/) /*RemoteModListFile*/  {
-//
-// 	mut remote_mod_list := []RemoteModList{}
-//
-// 	for p in platforms {
-//
-// 		// platform := p()
-// 	// for p in RemoteModList.platform
-// 		// println(mod_platforms)
-// 		// println('mods from $platform.name: ')
-// 		list_of_mods := p.list_mods(/*SearchFilter{limit: 0}*/)
-// 		println(list_of_mods.len)
-//
-// 		remote_mod_list << {
-// 			platform: p.name
-// 			mods:			list_of_mods
-// 			last_updated: 'today'
-// 		}
-//
-// 		// mod_list := platform.list_mods( SearchFilter{limit: 0} )
-// 		//
-// 		// for i, mod in list_of_mods {
-// 		// 	println('$i\t$mod.title')
-// 		// }
-// 	}
-//
-// 	// return {
-// 	// 	file_version: '0.0.1'
-// 	// 	last_updated: 'today'
-// 	// 	remote_mod_list: remote_mod_list
-// 	// }
-//
-//
-// }
 
 pub fn get_mod_info(source_name string, mod_id string) {
 	for p in mod_platforms.platforms {
