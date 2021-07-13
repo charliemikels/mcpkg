@@ -223,7 +223,7 @@ fn main() {
 		println(err)
 		exit(0) // TODO, set this back to a panic. exit(0) because I know
 	}
-	println(app_config)
+	// println(app_config)
 
 	// --== Main outline ==--
 
@@ -251,10 +251,12 @@ fn main() {
 	// --== TMP ==--
 	search := mp.SearchFilter{
 		// query: 'sodium'
-		// query: cmdline.option(os.args, '-S', '')
 		// query: 'fabric'
-		platform_name: 'modrinth'
-		game_versions: ['1.16.1', '1.16.2', '1.16.3']
+		query: cmdline.option(os.args, '-S', cmdline.option(os.args, '-s', ''))
+		platform_name: ''
+		// game_versions: ['1.17.1']
+		// game_versions: ['1.16.1', '1.16.2', '1.16.3']
+
 		// game_versions: ['']
 	}
 	mods := mp.search_for_mods(search) or {
@@ -263,16 +265,7 @@ fn main() {
 	}
 	print_mod_selection(mods)
 
-	// mut wanted_mods := []mp.Mod{}
-	// for m in mods {
-	// 	for v in versions {
-	// 		if v in m.game_versions {
-	// 			wanted_mods << m
-	// 			break
-	// 		}
-	// 	}
-	// }
-	// println('Mods with versions in $versions: $wanted_mods.len')
+
 
 	return
 }

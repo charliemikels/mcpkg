@@ -115,8 +115,25 @@ pub:
 // --== mod_platform api: ==--
 
 pub fn search_for_mods(filter SearchFilter) ?[]Mod {
-	p := get_platform_by_name(filter.platform_name) or { return err }
-	return p.get_mods_by_search(filter)
+	if filter.platform_name == '' {
+		// No platform given? Use all of them!
+		// mut threads := []thread []Mod{}
+		mut mods := []Mod{}
+		for p in platforms {
+			println('Making request to $p.name')
+			// threads << go p.get_mods_by_search(filter)
+			mods << p.get_mods_by_search(filter)
+		}
+		// threads_mods_split := threads.wait()
+		// for tms in threads_mods_split {
+		// 	mods << tms
+		// }
+		return mods
+
+	} else {
+		p := get_platform_by_name(filter.platform_name) or { return err }
+		return p.get_mods_by_search(filter)
+	}
 }
 
 pub fn get_mod_info(source_name string, mod_id string) {
