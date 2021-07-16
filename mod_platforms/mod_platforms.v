@@ -1,7 +1,7 @@
 module mod_platforms
 
 const (
-	platforms = [
+	platforms = [	// TODO: Change to a map to structs. Then get_platform_by_name can just look up the name as a key.
 		modrinth(),
 		// add platforms here
 	]

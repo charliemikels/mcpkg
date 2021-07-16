@@ -210,7 +210,7 @@ fn print_mod_selection(mods []mp.Mod) {
 		} else {
 			m.description
 		}
-		println('${mods.len - i}$spaces| $m.title: ${term.dim(description)}')
+		println('${pre}$m.title: ${term.dim(description)}')
 		// println('(description_width | description)')
 	}
 	println('\nFound $mods.len mods')
