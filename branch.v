@@ -4,13 +4,18 @@ import os
 import json
 import mod_platforms as mp
 
-struct BranchInfo {
+const branch_file_name = '.mcpkg_branch_info.json'
+// const (old_branch_file_names = [...])
+
+struct Branch {
+	pub:
 	file_version		string = '0.1'
+	pub mut:
 	branch_name			string
 	game_versions 	[]string
 	last_updated		string	// datetime?
-	mod_queue				[]mp.Mod
 	installed_mods	[]mp.Version
+	mod_queue				[]mp.Mod
 }
 
 // fn create_example_local_list() {
@@ -46,14 +51,34 @@ struct BranchInfo {
 // 	file.write_string(json.encode_pretty(local_list)) or { return }
 // }
 
-// load_branch_info takes a path to a file and converts it to a BranchInfo
-fn load_branch_info(path string) BranchInfo {
+struct BranchConfig {
+	name	string
+	game_versions	[]string
+}
+
+fn new_branch( bc BranchConfig ) Branch {
+	// TODO: Varify if the version list is a list of valid versions. See https://api.modrinth.com/api/v1/tag/game_version
+	new_branch := Branch {
+		branch_name: bc.name
+		game_versions: bc.game_versions	// TODO: Sort?
+	}
+	return new_branch
+}
+
+fn (a App) write_branch_file( b Branch) {
+	// os.write_file(app.)
+	println('TODO: Write to file')
+	println(b)
+}
+
+// load_branch_info takes a path to a file and converts it to a Branch
+fn load_branch_info(path string) Branch {
 	// TODO: Check if mod_list_path exists, or if we need to create it?
-	branch_info_string := os.read_file(path) or {
+	branch_json_string := os.read_file(path) or {
 		eprintln('Failed to open the local mod list ${path}.')
 		panic(err)
 	}
-	local_mod_list := json.decode(BranchInfo, branch_info_string) or {
+	local_mod_list := json.decode(Branch, branch_json_string) or {
 		eprintln('Failed to decode modlist at $path to json.')
 		panic(err)
 	}
