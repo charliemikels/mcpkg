@@ -150,7 +150,7 @@ fn create_config(path string) ?App {
 	// It is valid to give a path using `.` as in `./dir/conf.json`. TODO: This comparison might break in these situations. look into os.getwd().
 	// println(expected_conf_path)
 	// println(path)
-	if path !in [expected_conf_path, os.resource_abs_path('')] {
+	if path !in [expected_conf_path, os.resource_abs_path(mc_mcpkg_conf_name)] {
 		eprintln('Heads up: The path `$path` is an unstandard config file location or name. Make sure to use `-c $path` to reload these setting.')
 	}
 	new_config := os.input('Would you like to create a new config file at `$path`? [yes/No] ').to_lower()

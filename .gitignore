@@ -9,13 +9,5 @@
 # Unignore all dirs
 !*/
 
-# Ignore sample http returns
-*sample.json
-
-# Ignore config files
-# TODO: Create a sample config file
-config.json
-
-# Ignore generated files
-mod_list.json
-local_mod_list*.json
+# Ignore sample files
+*sample*json
