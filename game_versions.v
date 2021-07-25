@@ -23,10 +23,8 @@ fn get_mc_versions() []string {
 // This assumes every release number looks like #.##.#, and every snapshot
 // or pre-release has at least one extra character, like letters or dashes.
 fn is_release(version string) bool {
-	// TODO: Swap out the replace_each logic with an is_int method.
-	replace_numbers := ['1', '', '2', '', '3', '', '4', '', '5', '', '6', '', '7', '', '8', '',
-		'9', '', '0', '']
-	return version.replace('.', '').replace_each(replace_numbers) == ''
+	// We are cheesing the behavior of `.int()` pretty good. (it stops at the first non-number, or returns 0). An `is_int()` method would still be better.
+	return version.replace('.', '').int().str() == version.replace('.', '')
 }
 
 // get_mc_releases returns a list of release version numbers. This is basicaly just a wrapper for is_release.
