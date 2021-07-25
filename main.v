@@ -154,7 +154,7 @@ fn create_config(path string) ?App {
 		eprintln('Heads up: The path `$path` is an unstandard config file location or name. Make sure to use `-c $path` to reload these setting.')
 	}
 	new_config := os.input('Would you like to create a new config file at `$path`? [yes/No] ').to_lower()
-	if new_config == '' || new_config[0] != `y` {
+	if new_config[0] or { `n` } != `y` {
 		// Not yes
 		println('Exiting...')
 		exit(0)
@@ -163,7 +163,7 @@ fn create_config(path string) ?App {
 	// Set mod dir
 	mut mod_dir := mc_root_dir + mc_mod_dir
 	mut use_default_mod_path := os.input('Use default mod path `$mod_dir`? [Yes/no] ').to_lower()
-	for !(use_default_mod_path == '' || use_default_mod_path[0] == `y`) {
+	for use_default_mod_path[0] or { `y` } == `y` {
 		mod_dir = os.input('Choose a new path to your mods folder: ').replace('~', os.home_dir())
 		if os.is_dir(mod_dir) {
 			break
