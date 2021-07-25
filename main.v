@@ -27,12 +27,13 @@ const ( // QUESTION: Needed as const? We could stuff into load_app_config since 
 struct App {
 	// TODO: [skip] broke, watch V issue #10957 for updates
 	// TODO: use struct embeding to get arround json loading funk while [skip] is broken.
-	config_file_path string = mc_root_dir + mc_mcpkg_dir + mc_mcpkg_conf_name // TODO: Add `[skip]`. The file itself doesn't know where it is, and we get the path anyways from -c or one of the 3 default locations. Load in path when reading the file.
-	mods_dir         string = mc_root_dir + mc_mod_dir
-	current_branch   string		// QUESTION: skip? We can generate this from whatever .json file is left in mc_mcpkg_dir (especialy if we format the name to 'branch_BRANCHNAME.json' or something)
-	branches         []string // QUESTION: skip? We can generate this from the file system assuming we ignore DISABLED
-	game_versions		 []string = game_versions			// TODO: add skip, we don't need to store this much info if we can generate it on the fly.
-	game_releases		 []string = get_mc_releases()	// TODO: add skip, ^^
+	config_file_version string = '0.1'
+	config_file_path    string = mc_root_dir + mc_mcpkg_dir + mc_mcpkg_conf_name // TODO: Add `[skip]`. The file itself doesn't know where it is, and we get the path anyways from -c or one of the 3 default locations. Load in path when reading the file.
+	mods_dir            string = mc_root_dir + mc_mod_dir
+	current_branch      string   // QUESTION: skip? We can generate this from whatever .json file is left in mc_mcpkg_dir (especialy if we format the name to 'branch_BRANCHNAME.json' or something)
+	branches            []string // QUESTION: skip? We can generate this from the file system assuming we ignore DISABLED
+	game_versions       []string = game_versions // TODO: add skip, we don't need to store this much info if we can generate it on the fly.
+	game_releases       []string = get_mc_releases() // TODO: add skip, ^^
 }
 
 fn init_app() ?App {
@@ -47,9 +48,6 @@ fn init_app() ?App {
 }
 
 fn load_app_config() ?App {
-	// some defaults
-
-
 	// If user gave -c, try to use that
 	arg_path := cmdline.option(os.args, '-c', '')
 	if arg_path != '' {
@@ -129,16 +127,29 @@ fn parse_config_file(path string) ?App {
 	mut config := json.decode(App, json_text) or {
 		return error('Failed to decode config file json at `$path`.') // TODO: offer to create a fresh config. (Move file at path to 'old_$path_name')
 	}
+	// TODO: Catch file version errors. (json.decode will parse anything that's valid json and drops any tags that don't match.)
+	// if false {} else...
+
+	// check for formatting errors.
+	if json_text.trim_space() != json.encode_pretty(config) {
+		println('Your config file looks fine, but the formatting is a bit off.')
+		path_to_old := path.replace(os.file_name(path), 'old_' + os.file_name(path))
+		os.mv(path, path_to_old) or { panic(err) }
+		print('Backed up your current config to `$path_to_old`, ')
+
+		mut updated_conf := os.create(path) or { panic(err) }
+		updated_conf.write_string(json.encode_pretty(config)) or { panic(err) }
+		println('and wrote a fresh file to `$path`.')
+	}
 
 	return config
 }
 
 fn create_config(path string) ?App {
-	// defaults. TODO: these should be in a const, but there's a c error I don't want to deal with yet.
 	expected_conf_path := mc_root_dir + mc_mcpkg_dir + mc_mcpkg_conf_name
-	// It is valid to give a path using `.` as in `./dir/conf.json`. TODO: This comparison might break in these situations.
-	println(expected_conf_path)
-	println(path)
+	// It is valid to give a path using `.` as in `./dir/conf.json`. TODO: This comparison might break in these situations. look into os.getwd().
+	// println(expected_conf_path)
+	// println(path)
 	if path !in [expected_conf_path, os.resource_abs_path('')] {
 		eprintln('Heads up: The path `$path` is an unstandard config file location or name. Make sure to use `-c $path` to reload these setting.')
 	}
@@ -250,7 +261,7 @@ fn main() {
 	// 	// game_versions: ['']
 	// }
 
-	println(app)
+	// println(app)
 
 	// mods := mp.search_for_mods(search) or {
 	// 	eprintln(err)
