@@ -9,9 +9,6 @@ import os.cmdline
 import mod_platforms as mp
 import term
 
-// use https://api.modrinth.com/api/v1/tag/game_version to get a list of game versions in order.
-// IDEA: Use this to compare if a game version is newer or older than others.
-
 const ( // QUESTION: Needed as const? We could stuff into load_app_config since it will likely only hapen once per run anyways.
 	mc_root_dir = match os.user_os() {
 		'linux' { '$os.home_dir()/.minecraft/' }
@@ -25,12 +22,17 @@ const ( // QUESTION: Needed as const? We could stuff into load_app_config since 
 	mc_mcpkg_branch_info_name = 'branch_BRANCHNAME_info.json'
 )
 
-// App: Core app settings and modules
+// App: Core app settings and modules.
+// See parse_config_file for [skip]ed fields values
 struct App {
-	config_file_path string = mc_root_dir + mc_mcpkg_dir // TODO: Add `[skip]`. The file itself doesn't know where it is, and we get the path anyways from -c or one of the 3 default locations. Load in path when reading the file.
+	// TODO: [skip] broke, watch V issue #10957 for updates
+	// TODO: use struct embeding to get arround json loading funk while [skip] is broken.
+	config_file_path string = mc_root_dir + mc_mcpkg_dir + mc_mcpkg_conf_name // TODO: Add `[skip]`. The file itself doesn't know where it is, and we get the path anyways from -c or one of the 3 default locations. Load in path when reading the file.
 	mods_dir         string = mc_root_dir + mc_mod_dir
-	current_branch   Branch
-	branches         []Branch
+	current_branch   string		// QUESTION: skip? We can generate this from whatever .json file is left in mc_mcpkg_dir (especialy if we format the name to 'branch_BRANCHNAME.json' or something)
+	branches         []string // QUESTION: skip? We can generate this from the file system assuming we ignore DISABLED
+	game_versions		 []string = game_versions			// TODO: add skip, we don't need to store this much info if we can generate it on the fly.
+	game_releases		 []string = get_mc_releases()	// TODO: add skip, ^^
 }
 
 fn init_app() ?App {
@@ -46,7 +48,7 @@ fn init_app() ?App {
 
 fn load_app_config() ?App {
 	// some defaults
-	config_file_name := 'mcpkg_config.json'
+
 
 	// If user gave -c, try to use that
 	arg_path := cmdline.option(os.args, '-c', '')
@@ -59,18 +61,18 @@ fn load_app_config() ?App {
 		else if os.is_dir(arg_path) {
 			// Look for default config file.
 			// check if there's a trailing /
-			if os.is_file(arg_path + config_file_name) {
-				return parse_config_file(arg_path + config_file_name)
+			if os.is_file(arg_path + mc_mcpkg_conf_name) {
+				return parse_config_file(arg_path + mc_mcpkg_conf_name)
 			}
 			// no trailing /
-			else if os.is_file(arg_path + '/' + config_file_name) {
-				return parse_config_file(arg_path + '/' + config_file_name)
+			else if os.is_file(arg_path + '/' + mc_mcpkg_conf_name) {
+				return parse_config_file(arg_path + '/' + mc_mcpkg_conf_name)
 			}
 			// end of is_dir()
 		}
 		// Path isn't a file, or a directory. Let's try to create the file at the given path.
 		eprintln('no file found at `$arg_path`')
-		if '.json' in arg_path.to_lower() {
+		if arg_path.to_lower().contains('.json') {
 			return create_config(arg_path)
 		}
 		create_config(arg_path + '.json') ?
@@ -80,35 +82,35 @@ fn load_app_config() ?App {
 
 		// Check current working dir first:
 		// NOTE: you might have to use os.getwd() to find the path to the working directory.
-		if os.is_file(config_file_name) {
-			println('Loading config from ./$config_file_name')
-			return parse_config_file(config_file_name)
+		if os.is_file(mc_mcpkg_conf_name) {
+			println('Loading config from ./$mc_mcpkg_conf_name')
+			return parse_config_file(mc_mcpkg_conf_name)
 		}
 
 		// If there's no config at `.`, lets look at the prefered `.minecraft/mods`
-		if os.is_file(mc_root_dir + mc_mcpkg_dir + config_file_name) {
-			return parse_config_file(mc_root_dir + mc_mcpkg_dir + config_file_name) // QUESTION: os.join_path() // https://modules.vlang.io/os.html#join_path
+		if os.is_file(mc_root_dir + mc_mcpkg_dir + mc_mcpkg_conf_name) {
+			return parse_config_file(mc_root_dir + mc_mcpkg_dir + mc_mcpkg_conf_name) // QUESTION: os.join_path() // https://modules.vlang.io/os.html#join_path
 		}
 
 		// Lastly, as a backup, we'll check mcpkg executable's root dir.
-		if os.is_file(os.resource_abs_path(config_file_name)) {
-			println('Loading config from `${os.resource_abs_path(config_file_name)}`')
-			return parse_config_file(os.resource_abs_path(config_file_name))
+		if os.is_file(os.resource_abs_path(mc_mcpkg_conf_name)) {
+			println('Loading config from `${os.resource_abs_path(mc_mcpkg_conf_name)}`')
+			return parse_config_file(os.resource_abs_path(mc_mcpkg_conf_name))
 		}
 
 		// If it's not in any of these places, then we need to create our own config file.
 		// First see if `~/.minecraft` exists. If it does, then it's cool to create our own mods folder.
 		if os.is_dir(mc_root_dir) {
 			eprintln('Could not find a mcpkg config file in `$mc_root_dir`')
-			return create_config(mc_root_dir + mc_mcpkg_dir + config_file_name)
+			return create_config(mc_root_dir + mc_mcpkg_dir + mc_mcpkg_conf_name)
 		} else {
 			// Could not find a .minecraft folder.
 			eprintln('MCPKG can\'t find your minecraft directory. On $os.user_os(), it\'s suposed to be here: `$mc_root_dir`.')
 			mut last_path := ''
 			if os.is_writable_folder(os.resource_abs_path('')) or { panic } {
-				last_path = os.resource_abs_path(config_file_name)
+				last_path = os.resource_abs_path(mc_mcpkg_conf_name)
 			} else {
-				last_path = './' + config_file_name
+				last_path = './' + mc_mcpkg_conf_name
 			}
 
 			println('MCPKG can create a config file for you at `$last_path`, but you will have to edit this file before continuing.')
@@ -124,29 +126,30 @@ fn parse_config_file(path string) ?App {
 		panic(err)
 	}
 	// decode json
-	config := json.decode(App, json_text) or {
-		// eprintln('Failed to decode config file json at `$path`.')
+	mut config := json.decode(App, json_text) or {
 		return error('Failed to decode config file json at `$path`.') // TODO: offer to create a fresh config. (Move file at path to 'old_$path_name')
 	}
-	// TODO: Once we've set up our config, overwrite the cuurent json file with it. That way, any new elements get written to the config file.
+
 	return config
 }
 
 fn create_config(path string) ?App {
 	// defaults. TODO: these should be in a const, but there's a c error I don't want to deal with yet.
 	expected_conf_path := mc_root_dir + mc_mcpkg_dir + mc_mcpkg_conf_name
-
-	// Warn if path in in an unstandard location. "Remember to run mcpkg with `-c path/to/this/file`"
+	// It is valid to give a path using `.` as in `./dir/conf.json`. TODO: This comparison might break in these situations.
+	println(expected_conf_path)
+	println(path)
 	if path !in [expected_conf_path, os.resource_abs_path('')] {
-		println('Heads up: mcpkg is going to create a config file at unstandard path: `$path`.')
-		println('Run mcpkg with the argument `-c $path` to load this config file next time.')
+		eprintln('Heads up: The path `$path` is an unstandard config file location or name. Make sure to use `-c $path` to reload these setting.')
 	}
-	if os.input('Would you like to create a new config file at `$path`? [yes/No] ').to_lower()[0] != `y` {
+	new_config := os.input('Would you like to create a new config file at `$path`? [yes/No] ').to_lower()
+	if new_config == '' || new_config[0] != `y` {
 		// Not yes
 		println('Exiting...')
 		exit(0)
 	}
 
+	// Set mod dir
 	mut mod_dir := mc_root_dir + mc_mod_dir
 	mut use_default_mod_path := os.input('Use default mod path `$mod_dir`? [Yes/no] ').to_lower()
 	for !(use_default_mod_path == '' || use_default_mod_path[0] == `y`) {
@@ -154,8 +157,10 @@ fn create_config(path string) ?App {
 		if os.is_dir(mod_dir) {
 			break
 		}
-		println('`$mod_dir` is not a directory ')
+		println('`$mod_dir` is not a directory. ')
 	}
+
+	// TODO: Set prefered game version / create_new_branch()
 
 	println('creating config file...')
 
