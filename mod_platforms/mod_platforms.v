@@ -1,7 +1,7 @@
 module mod_platforms
 
 const (
-	platforms = [	// TODO: Change to a map to structs. Then get_platform_by_name can just look up the name as a key.
+	platforms = [// TODO: Change to a map to structs. Then get_platform_by_name can just look up the name as a key.
 		modrinth(),
 		// add platforms here
 	]
@@ -129,7 +129,6 @@ pub fn search_for_mods(filter SearchFilter) ?[]Mod {
 		// 	mods << tms
 		// }
 		return mods
-
 	} else {
 		p := get_platform_by_name(filter.platform_name) or { return err }
 		return p.get_mods_by_search(filter)

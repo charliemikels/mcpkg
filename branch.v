@@ -5,17 +5,18 @@ import json
 import mod_platforms as mp
 
 const branch_file_name = '.mcpkg_branch_info.json'
+
 // const (old_branch_file_names = [...])
 
 struct Branch {
-	pub:
-	file_version		string = '0.1'
-	pub mut:
-	branch_name			string
-	game_versions 	[]string
-	last_updated		string	// datetime?
-	installed_mods	[]mp.Version
-	mod_queue				[]mp.Mod
+pub:
+	file_version string = '0.1'
+pub mut:
+	branch_name    string
+	game_versions  []string
+	last_updated   string // datetime?
+	installed_mods []mp.Version
+	mod_queue      []mp.Mod
 }
 
 // fn create_example_local_list() {
@@ -52,20 +53,20 @@ struct Branch {
 // }
 
 struct BranchConfig {
-	name	string
-	game_versions	[]string
+	name          string
+	game_versions []string
 }
 
-fn new_branch( bc BranchConfig ) Branch {
+fn new_branch(bc BranchConfig) Branch {
 	// TODO: Varify if the version list is a list of valid versions. See https://api.modrinth.com/api/v1/tag/game_version
-	new_branch := Branch {
+	new_branch := Branch{
 		branch_name: bc.name
-		game_versions: bc.game_versions	// TODO: Sort?
+		game_versions: bc.game_versions // TODO: Sort?
 	}
 	return new_branch
 }
 
-fn (a App) write_branch_file( b Branch) {
+fn (a App) write_branch_file(b Branch) {
 	// os.write_file(app.)
 	println('TODO: Write to file')
 	println(b)
