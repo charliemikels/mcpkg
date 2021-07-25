@@ -21,6 +21,8 @@ const (	// QUESTION: Needed as const? We could stuff into load_app_config since 
 	}
 	mc_mod_dir = 'mods/'
 	mc_mcpkg_dir = 'mods/.mcpkg/'
+	mc_mcpkg_conf_name = 'mcpkg_conf.json'
+	mc_mcpkg_branch_info_name = 'branch_BRANCHNAME_info.json'
 )
 
 // App: Core app settings and modules
@@ -69,8 +71,8 @@ fn load_app_config() ?App {
 		// Path isn't a file, or a directory. Let's try to create the file at the given path.
 		eprintln('no file found at `$arg_path`')
 		if '.json' in arg_path.to_lower() { return create_config(arg_path) }
-		create_config(arg_path + '.json')?	
-		// end of (arg_path != '')
+		create_config(arg_path + '.json')?
+		// end of -C logic
 	} else {
 		// The user did not pass -c, we need to load a default path.
 
@@ -82,8 +84,8 @@ fn load_app_config() ?App {
 		}
 
 		// If there's no config at `.`, lets look at the prefered `.minecraft/mods`
-		if os.is_file(mc_root_dir + mc_mod_dir + config_file_name) {
-			return parse_config_file(mc_root_dir + mc_mod_dir + config_file_name)
+		if os.is_file(mc_root_dir + mc_mcpkg_dir + config_file_name) {
+			return parse_config_file(mc_root_dir + mc_mcpkg_dir + config_file_name)	// QUESTION: os.join_path() // https://modules.vlang.io/os.html#join_path
 		}
 
 		// Lastly, as a backup, we'll check mcpkg executable's root dir.
@@ -92,11 +94,11 @@ fn load_app_config() ?App {
 			return parse_config_file(os.resource_abs_path(config_file_name))
 		}
 
-		// If it's not in either of these places, then we need to create our own config file.
+		// If it's not in any of these places, then we need to create our own config file.
 		// First see if `~/.minecraft` exists. If it does, then it's cool to create our own mods folder.
 		if os.is_dir(mc_root_dir) {
 			eprintln('Could not find a mcpkg config file in `$mc_root_dir`')
-			return create_config(mc_root_dir + mc_mod_dir + config_file_name)
+			return create_config(mc_root_dir + mc_mcpkg_dir + config_file_name)
 		} else {
 			// Could not find a .minecraft folder.
 			eprintln('MCPKG can\'t find your minecraft directory. On $os.user_os(), it\'s suposed to be here: `$mc_root_dir`.')
@@ -130,35 +132,42 @@ fn parse_config_file(path string) ?App {
 
 fn create_config(path string) ?App {
 	// defaults. TODO: these should be in a const, but there's a c error I don't want to deal with yet.
-	default_mc_mods_dir := $if macos {
-		'$os.home_dir()/Library/Application Support/minecraft/mods/'
-	} $else $if windows {
-		'%appdata%/.minecraft/mods/' // QUESTION: Might not work, intended for win+R shortcut. Also, / is usualy \
-	} $else { // Linux default
-		'$os.home_dir()/.minecraft/mods/'
-	}
+	expected_conf_path := mc_root_dir + mc_mcpkg_dir + mc_mcpkg_conf_name
 
 	// Warn if path in in an unstandard location. "Remember to run mcpkg with `-c path/to/this/file`"
-	if path !in [default_mc_mods_dir + 'mcpkg_config.json', os.resource_abs_path('')] {
+	if path !in [expected_conf_path, os.resource_abs_path('')] {
 		println('Heads up: mcpkg is going to create a config file at unstandard path: `$path`.')
 		println('Run mcpkg with the argument `-c $path` to load this config file next time.')
 	}
-	if os.input('Would you like to create a config file at `$path`? [yes/No] ').to_lower()[0] != `y` {
+	if os.input('Would you like to create a new config file at `$path`? [yes/No] ').to_lower()[0] != `y` {
 		// Not yes
 		println('Exiting...')
 		exit(0)
 	}
 
-	// User said "yes", so let's make them a file.
+	mut mod_dir := mc_root_dir + mc_mod_dir
+	mut use_default_mod_path := os.input('Use default mod path `$mod_dir`? [Yes/no] ').to_lower()
+	for !(use_default_mod_path == '' || use_default_mod_path[0] == `y`) {
+		mod_dir = os.input('Choose a new path to your mods folder: ').replace('~', os.home_dir() )
+		if os.is_dir(mod_dir) { break }
+		println('`$mod_dir` is not a directory ')
+	}
+
 	println('creating config file...')
 
 	// Creat default object
 	config := App{
-		mods_dir: default_mc_mods_dir
+		mods_dir: mod_dir
 		config_file_path: path
 	}
 
-	os.write_file(path, json.encode_pretty(config)) or { panic(err) }
+	if !os.is_dir( os.dir(path) ) {
+		os.mkdir_all( os.dir(path) ) or { panic(err) }
+	}
+
+	// os.write_file(path, json.encode_pretty(config)) or { panic(err) }
+	mut config_file := os.create(path) or { panic(err) }
+	_ := config_file.write_string( json.encode_pretty(config) ) or { panic(err) }
 
 	println('Config file written to `$path`.')
 	return config
