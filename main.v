@@ -25,25 +25,26 @@ const ( // QUESTION: Needed as const? We could stuff into load_app_config since 
 // App: Core app settings and modules.
 // See parse_config_file for [skip]ed fields values
 struct App {
+	AppJson
 	// TODO: [skip] broke, watch V issue #10957 for updates
-	// TODO: use struct embeding to get arround json loading funk while [skip] is broken.
+	// We're using struct embeding to get arround json loading funk while [skip] is broken.
+	current_branch      string 		// Branch
+	branches            []string	// []Branch
 	game_versions       []GameVersion = game_versions	// do we need this as a const?
 	// game_releases       []GameVersion = get_mc_releases() // TODO: add skip, ^^
+}
+
+struct AppJson {
 	config_file_version string = '0.1'
 	config_file_path    string = mc_root_dir + mc_mcpkg_dir + mc_mcpkg_conf_name // TODO: Add `[skip]`. The file itself doesn't know where it is, and we get the path anyways from -c or one of the 3 default locations. Load in path when reading the file.
 	mods_dir            string = mc_root_dir + mc_mod_dir
-	current_branch      string   // QUESTION: skip? We can generate this from whatever .json file is left in mc_mcpkg_dir (especialy if we format the name to 'branch_BRANCHNAME.json' or something)
-	branches            []string // QUESTION: skip? We can generate this from the file system assuming we ignore DISABLED
 }
 
 fn init_app() ?App {
 	// basic app settings
-	app := load_app_config() or { panic(err) }
-	// check if branches exist
-	// if branch_file_name in mod_dir files list, it exists. parse.
-	// Else, create the file and return
-	// app.create_branch_file()
-
+	mut app := load_app_config() or { panic(err) }
+	// Load branch info here.
+	// Can't load it as a default, since they'll need to know where the mod dir is.
 	return app
 }
 
@@ -124,22 +125,30 @@ fn parse_config_file(path string) ?App {
 		panic(err)
 	}
 	// decode json
-	mut config := json.decode(App, json_text) or {
+	// TODO: WHEN [skip] FIXED, replace AppJson with App
+	mut config_json := json.decode(AppJson, json_text) or {
 		return error('Failed to decode config file json at `$path`.') // TODO: offer to create a fresh config. (Move file at path to 'old_$path_name')
 	}
 	// TODO: Catch file version errors. (json.decode will parse anything that's valid json and drops any tags that don't match.)
 	// if false {} else...
 
+	// TODO: Check validation errors.
+
 	// check for formatting errors.
-	if json_text.trim_space() != json.encode_pretty(config) {
+	if json_text.trim_space() != json.encode_pretty(config_json) {
 		println('Your config file looks fine, but the formatting is a bit off.')
 		path_to_old := path.replace(os.file_name(path), 'old_' + os.file_name(path))
 		os.mv(path, path_to_old) or { panic(err) }
 		print('Backed up your current config to `$path_to_old`, ')
 
 		mut updated_conf := os.create(path) or { panic(err) }
-		updated_conf.write_string(json.encode_pretty(config)) or { panic(err) }
+		updated_conf.write_string(json.encode_pretty(config_json)) or { panic(err) }
 		println('and wrote a fresh file to `$path`.')
+	}
+
+	// BROKEN [skip] WORKARROUND
+	config := App{
+		AppJson: config_json
 	}
 
 	return config
@@ -165,9 +174,7 @@ fn create_config(path string) ?App {
 	mut use_default_mod_path := os.input('Use default mod path `$mod_dir`? [Yes/no] ').to_lower()
 	for use_default_mod_path[0] or { `y` } == `y` {
 		mod_dir = os.input('Choose a new path to your mods folder: ').replace('~', os.home_dir())
-		if os.is_dir(mod_dir) {
-			break
-		}
+		if os.is_dir(mod_dir) {	break	}
 		println('`$mod_dir` is not a directory. ')
 	}
 
@@ -187,7 +194,7 @@ fn create_config(path string) ?App {
 
 	// os.write_file(path, json.encode_pretty(config)) or { panic(err) }
 	mut config_file := os.create(path) or { panic(err) }
-	_ := config_file.write_string(json.encode_pretty(config)) or { panic(err) }
+	config_file.write_string(json.encode_pretty(config)) or { panic(err) }
 
 	println('Config file written to `$path`.')
 	return config
@@ -202,7 +209,7 @@ fn print_mod_selection(mods []mp.Mod) {
 		}
 	}
 	t_width, _ := term.get_terminal_size()
-	// reversed, so the most relevent item is desplayed last
+	// reversed, so the most relevent item is displayed last
 	mods_r := mods.reverse()
 	for i, m in mods_r {
 		spaces := ' '.repeat(max_spacing - (mods.len - i).str().len)
@@ -224,7 +231,9 @@ fn main() {
 	// println(os.args)
 	// TODO: Load config files
 	app := init_app() or { panic(err) }
-	// println(app_config)
+	println(app)
+	println(json.encode(app.AppJson))
+	println(json.encode(app.config_file_version))
 
 	// --== Main outline ==--
 
