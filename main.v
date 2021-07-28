@@ -27,13 +27,13 @@ const ( // QUESTION: Needed as const? We could stuff into load_app_config since 
 struct App {
 	// TODO: [skip] broke, watch V issue #10957 for updates
 	// TODO: use struct embeding to get arround json loading funk while [skip] is broken.
+	game_versions       []GameVersion = game_versions	// do we need this as a const?
+	// game_releases       []GameVersion = get_mc_releases() // TODO: add skip, ^^
 	config_file_version string = '0.1'
 	config_file_path    string = mc_root_dir + mc_mcpkg_dir + mc_mcpkg_conf_name // TODO: Add `[skip]`. The file itself doesn't know where it is, and we get the path anyways from -c or one of the 3 default locations. Load in path when reading the file.
 	mods_dir            string = mc_root_dir + mc_mod_dir
 	current_branch      string   // QUESTION: skip? We can generate this from whatever .json file is left in mc_mcpkg_dir (especialy if we format the name to 'branch_BRANCHNAME.json' or something)
 	branches            []string // QUESTION: skip? We can generate this from the file system assuming we ignore DISABLED
-	game_versions       []string = game_versions // TODO: add skip, we don't need to store this much info if we can generate it on the fly.
-	game_releases       []string = get_mc_releases() // TODO: add skip, ^^
 }
 
 fn init_app() ?App {
