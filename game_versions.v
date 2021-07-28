@@ -69,16 +69,15 @@ fn is_release(version string) bool {
 	return version.replace('.', '').int().str() == version.replace('.', '')
 }
 
-// // get_mc_releases returns a list of release version numbers. This is basicaly just a wrapper for is_release.
-// fn get_mc_releases() []string {
-// 	return game_versions.filter(is_release(it))
-// }
-//
-// // get_mc_snapshots returns a list of snapshot version numbers. This is the inverse of get_mc_releases.
-// fn get_mc_snapshots() []string {
-// 	return game_versions.filter(!is_release(it))
-// }
-
 fn next_version(current_version GameVersion) GameVersion {
 	return game_versions[current_version.index-1] or {game_versions[0]}
+}
+
+fn next_release(current_version GameVersion) GameVersion {
+	// There's a better way to do this, but we shouldn't need to run this too often anyways...
+	mut nv := next_version(current_version)
+	for !(nv.kind == 'release' || nv.index == 0) {
+		nv = next_version(nv)
+	}
+	return nv
 }

@@ -232,8 +232,11 @@ fn main() {
 	// TODO: Load config files
 	app := init_app() or { panic(err) }
 	println(app)
-	println(json.encode(app.AppJson))
-	println(json.encode(app.config_file_version))
+	// println(json.encode(app.AppJson))
+	// println(app.config_file_version)
+	println(app.game_versions[371])
+	println(next_version(app.game_versions[371]))
+	println(next_release(app.game_versions[371]))
 
 	// --== Main outline ==--
 
