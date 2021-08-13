@@ -118,7 +118,7 @@ fn modrinth_make_mod_request(filter SearchFilter, limit int, cycle int) Modrinth
 	mut facets := '[' + facet_versions + ']'
 
 	// build final paramaters map
-	mut p := map{
+	mut p := {
 		'limit':  '$limit'
 		'offset': '$offset'
 		'index':  index
@@ -223,7 +223,7 @@ fn modrinth_get_mod_details(m Mod) ModDetailed {
 	// Prep API requests. I think we can get away with only one config.
 	config := http.FetchConfig{
 		// See https://github.com/modrinth/labrinth/wiki/API-Documentation
-		params: map{
+		params: {
 			'index': 'updated'
 			'limit': '100'
 			// 'offset': ----
