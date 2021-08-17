@@ -88,18 +88,18 @@ fn previous_version(current_version GameVersion) ?GameVersion {
 
 fn next_release(current_version GameVersion) ?GameVersion {
 	// There's a better way to do this, but we shouldn't need to run this too often anyways...
-	mut nv := next_version(current_version)?
+	mut nv := next_version(current_version) ?
 	for nv.kind != 'release' {
-		nv = next_version(nv) or { return error('no newer releases')}
+		nv = next_version(nv) or { return error('no newer releases') }
 	}
 	return nv
 }
 
 fn previous_release(current_version GameVersion) ?GameVersion {
 	// There's a better way to do this, but we shouldn't need to run this too often anyways...
-	mut pv := previous_version(current_version)?
+	mut pv := previous_version(current_version) ?
 	for pv.kind != 'release' {
-		pv = previous_version(pv) or { return error('No older releases.')}
+		pv = previous_version(pv) or { return error('No older releases.') }
 	}
 	return pv
 }
@@ -107,7 +107,9 @@ fn previous_release(current_version GameVersion) ?GameVersion {
 fn get_latest_release() GameVersion {
 	mut r := game_versions[0]
 	if r.kind != 'release' {
-		r = previous_release(r) or { panic('get_latest_release() failed. Was game_versions successfuly created?') }
+		r = previous_release(r) or {
+			panic('get_latest_release() failed. Was game_versions successfuly created?')
+		}
 	}
 	return r
 }

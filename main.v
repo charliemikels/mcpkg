@@ -16,38 +16,58 @@ const ( // QUESTION: Needed as const? We could stuff into load_app_config since 
 		'windows' { '%appdata%/.minecraft/' } // QUESTION: Might not work, intended for win+R shortcut. Also, / is usualy \
 		else { '$os.home_dir()/' }
 	}
-	mc_mod_dir                = 'mods/'
-	mc_mcpkg_dir              = 'mods/.mcpkg/'
-	mc_mcpkg_conf_name        = 'mcpkg_conf.json'
-	mc_mcpkg_branch_info_name = 'branch_BRANCHNAME_info.json'
+	mc_mod_dir         = 'mods/'
+	mc_mcpkg_dir       = 'mcpkg/'
+	mc_mcpkg_conf_name = 'mcpkg_conf.json'
+		// mc_mcpkg_branch_info_name = 'branch_BRANCHNAME_info.json'
 )
 
 // App: Core app settings and modules.
 // See parse_config_file for [skip]ed fields values
 struct App {
 	AppJson
+mut:
 	// TODO: [skip] broke, watch V issue #10957 for updates
 	// We're using struct embeding to get arround json loading funk while [skip] is broken.
-	current_branch      string 		// Branch
-	branches            []string	// []Branch
-	game_versions       []GameVersion = game_versions	// do we need this as a const?
-	// game_releases       []GameVersion = get_mc_releases() // TODO: add skip, ^^
+	config_dir       string
+	config_file_path string
+	current_branch   Branch
+	branches         []string      // QUESTION: Remove? We already have a.list_branches()
+	game_versions    []GameVersion = game_versions // I think we can generate this on the fly. Do we need to put it in App?
 }
 
 struct AppJson {
+mut:
+	current_branch_name string
 	config_file_version string = '0.1'
-	config_file_path    string = mc_root_dir + mc_mcpkg_dir + mc_mcpkg_conf_name // TODO: Add `[skip]`. The file itself doesn't know where it is, and we get the path anyways from -c or one of the 3 default locations. Load in path when reading the file.
-	mods_dir            string = mc_root_dir + mc_mod_dir
+	mc_dir              string = mc_root_dir
 }
 
 fn init_app() ?App {
 	// basic app settings
 	mut app := load_app_config() or { panic(err) }
 	// Load branch info here.
+	app.load_current_branch() or {
+		if err.msg.contains('does not exist.') {
+			eprintln('Can\' find current_branch: `$app.current_branch_name`')
+			println(app)
+			if os.input('Would you like to create a fresh branch file? [yes/No] ').to_lower()[0] or {
+				`n`
+			} != `y` {
+				println('Exiting...')
+				exit(0)
+			} else {
+				app.new_branch_wizard()
+			}
+		} else {
+			panic(err)
+		}
+	}
 	// Can't load it as a default, since they'll need to know where the mod dir is.
 	return app
 }
 
+// QUESTION: With changes to use a .minecraft/mkdir as the default, load_app_config() might need to ajusted
 fn load_app_config() ?App {
 	// If user gave -c, try to use that
 	arg_path := cmdline.option(os.args, '-c', '')
@@ -134,24 +154,37 @@ fn parse_config_file(path string) ?App {
 
 	// TODO: Check validation errors.
 
-	// check for formatting errors.
+	// Check for formatting errors.
 	if json_text.trim_space() != json.encode_pretty(config_json) {
-		println('Your config file looks fine, but the formatting is a bit off.')
-		path_to_old := path.replace(os.file_name(path), 'old_' + os.file_name(path))
-		os.mv(path, path_to_old) or { panic(err) }
-		print('Backed up your current config to `$path_to_old`, ')
-
+		backup_file(path, 3)
 		mut updated_conf := os.create(path) or { panic(err) }
 		updated_conf.write_string(json.encode_pretty(config_json)) or { panic(err) }
-		println('and wrote a fresh file to `$path`.')
 	}
 
-	// BROKEN [skip] WORKARROUND
+	// We could load the current branch here, but it's easier to keep it as a method for app
+
+	// HACK: workarround for [skip]
 	config := App{
 		AppJson: config_json
+		config_dir: os.dir(path) + '/' // the config file location determins where branches live. We need to keep the path arround.
+		config_file_path: path // small chance we'll want this???
 	}
 
 	return config
+}
+
+fn (a App) save_config() {
+	backup_file(a.config_file_path, 3)
+	mut json_struct := a.AppJson
+	json_struct.current_branch_name = a.current_branch.name
+
+	json_string := json.encode_pretty(json_struct)
+
+	mut config_file := os.create(a.config_file_path) or { panic(err) }
+	defer {
+		config_file.close()
+	}
+	config_file.write_string(json_string) or { panic(err) }
 }
 
 fn create_config(path string) ?App {
@@ -170,12 +203,15 @@ fn create_config(path string) ?App {
 	}
 
 	// Set mod dir
-	mut mod_dir := mc_root_dir + mc_mod_dir
-	mut use_default_mod_path := os.input('Use default mod path `$mod_dir`? [Yes/no] ').to_lower()
-	for use_default_mod_path[0] or { `y` } == `y` {
-		mod_dir = os.input('Choose a new path to your mods folder: ').replace('~', os.home_dir())
-		if os.is_dir(mod_dir) {	break	}
-		println('`$mod_dir` is not a directory. ')
+	mut mc_dir := mc_root_dir
+	mut use_default_mc_path := os.input('Use default .minecraft path `$mc_root_dir`? [Yes/no] ').to_lower()
+	for !(use_default_mc_path[0] or { `y` } == `y`) {
+		mc_dir = os.input('Choose a new path to your .minecraft folder: ').replace('~',
+			os.home_dir())
+		if os.is_dir(mc_dir) {
+			break
+		}
+		println('`$mc_dir` is not a directory. ')
 	}
 
 	// TODO: Set prefered game version / create_new_branch()
@@ -184,8 +220,9 @@ fn create_config(path string) ?App {
 
 	// Creat default object
 	config := App{
-		mods_dir: mod_dir
+		mc_dir: mc_dir
 		config_file_path: path
+		config_dir: os.dir(path)
 	}
 
 	if !os.is_dir(os.dir(path)) {
@@ -194,7 +231,8 @@ fn create_config(path string) ?App {
 
 	// os.write_file(path, json.encode_pretty(config)) or { panic(err) }
 	mut config_file := os.create(path) or { panic(err) }
-	config_file.write_string(json.encode_pretty(config)) or { panic(err) }
+	config_file.write_string(json.encode_pretty(config.AppJson)) or { panic(err) }
+	config_file.close()
 
 	println('Config file written to `$path`.')
 	return config
@@ -230,56 +268,33 @@ fn print_mod_selection(mods []mp.Mod) {
 fn main() {
 	// println(os.args)
 	// TODO: Load config files
-	app := init_app() or { panic(err) }
-	println(app)
-	// println(json.encode(app.AppJson))
-	// println(app.config_file_version)
-	println(app.game_versions[371])
-	println(next_version(app.game_versions[371]))
-	println(next_release(app.game_versions[371]))
+	mut app := init_app() or { panic(err) }
 
-	// --== Main outline ==--
-
-	// Load local mod list
-	// create_example_local_list()
-	// mod_list_path := settings.mod_dir + './local_mod_list.json'
-	// local_mod_list := load_local_mod_json(mod_list_path)
-	// println(local_mod_list)
-
-	// Download and compare remote info about local mods
-
-	// mp.get_mod_info('modrinth', 'AANobbMI')
-	// for lm in local_mod_list.mods {
-	// 	mp.get_mod_info( lm.source, lm.id )
-	// 	println(lm.name)
-	// }
-
-	// Limit remote mods to selected game version.
-
-	// If local mod version is less than remote versions:
-	// Prompt user of updates and prepare download
-
-	// Update local mod list
+	if cmdline.option(os.args, '-b', '') != '' {
+		app.change_branch(cmdline.option(os.args, '-b', '')) or { panic(err) }
+		println(app.current_branch)
+		return
+	}
 
 	// --== TMP ==--
-	// search := mp.SearchFilter{
-	// 	// query: 'sodium'
-	// 	// query: 'fabric'
-	// 	query: cmdline.option(os.args, '-S', cmdline.option(os.args, '-s', ''))
-	// 	platform_name: ''
-	// 	// game_versions: ['1.17.1']
-	// 	// game_versions: ['1.16.1', '1.16.2', '1.16.3']
-	//
-	// 	// game_versions: ['']
-	// }
-
-	// println(app)
+	search := mp.SearchFilter{
+		// query: 'sodium'
+		// query: 'fabric'
+		query: cmdline.option(os.args, '-S', cmdline.option(os.args, '-s', ''))
+		platform_name: ''
+		// game_versions: ['1.17.1']
+		// game_versions: ['1.16.1', '1.16.2', '1.16.3']
+		// game_versions: ['']
+	}
 
 	// mods := mp.search_for_mods(search) or {
 	// 	eprintln(err)
 	// 	return
 	// }
 	// print_mod_selection(mods)
+
+	println(app.current_branch)
+	println(app.list_branches())
 
 	return
 }
