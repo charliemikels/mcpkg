@@ -32,7 +32,6 @@ fn (a App) branch_dir(name string) string {
 struct BranchConfig {
 	name          string   = 'NO_BRANCH_NAME'
 	game_versions []string = []
-	set_current   bool //		= false
 }
 
 // new_branch creates a new branch. It also saves the branch to a file
@@ -51,7 +50,6 @@ fn (mut a App) new_branch(bc BranchConfig) Branch {
 	new_branch := Branch{
 		name: bc.name
 		game_versions: gv // TODO: Sort? not needed but might be pretty in the json
-		// is_current: bc.set_as_current
 	}
 
 	a.save_branch(new_branch)
@@ -59,18 +57,22 @@ fn (mut a App) new_branch(bc BranchConfig) Branch {
 }
 
 fn (mut a App) new_branch_wizard() Branch {
-	// TODO: new_branch_wizard
-	// Ask the user questions to build BranchConfig
-	println('TODO: new_branch_wizard()')
+	println('Creating a new branch...')
+	name := os.input('Name of new branch: ')
+	println('What Minecraft versions should mods target? (Separate with a space for multiple)')
+	versions := os.input('> ').split(' ')	// TODO: validate(game_version string)
+
 	config := BranchConfig{
-		name: 'TODO__new_branch_wizard'
-		game_versions: [get_latest_release().name]
-		set_current: true
+		name: name
+		game_versions: versions
 	}
+
 	my_branch := a.new_branch(config)
-	if config.set_current == true {
-		a.change_branch(my_branch.name) or { panic(err) }
+
+	if os.input('Set $name as the current branch? [yes/No] ')[0] or { `n` } == `y` {
+			a.change_branch(my_branch.name) or { panic(err) }
 	}
+
 	return my_branch
 }
 

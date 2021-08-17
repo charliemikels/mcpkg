@@ -49,6 +49,7 @@ fn init_app() ?App {
 	// Load branch info here.
 	app.load_current_branch() or {
 		if err.msg.contains('does not exist.') {
+			// TODO: Check if there are mods in `mods/`. We should back them up if there are.
 			eprintln('Can\' find current_branch: `$app.current_branch_name`')
 			println(app)
 			if os.input('Would you like to create a fresh branch file? [yes/No] ').to_lower()[0] or {
@@ -273,6 +274,14 @@ fn main() {
 	if cmdline.option(os.args, '-b', '') != '' {
 		app.change_branch(cmdline.option(os.args, '-b', '')) or { panic(err) }
 		println(app.current_branch)
+		println(app.list_branches())
+		return
+	}
+
+	if '-B' in cmdline.only_options(os.args) {
+		app.new_branch_wizard()
+		println(app.current_branch)
+		println(app.list_branches())
 		return
 	}
 
