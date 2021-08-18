@@ -22,7 +22,7 @@ Features wishlist:
 - [ ] Handle dependencies / library mods
 - [ ] Search for and install new mods
 - [ ] Upgrade all mods to new preferred version of Minecraft.
-- [ ] Mod folders / profiles (eg `1.16`, `1.17 Optifine`, `1.17 Sodium`)
+- [x] ~~Mod folders / profiles (eg `1.16`, `1.17 Optifine`, `1.17 Sodium`)~~ Branches
 - [ ] Texture / resource packs support?
 - [ ] Shader pack support???
 
