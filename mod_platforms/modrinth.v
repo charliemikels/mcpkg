@@ -139,10 +139,11 @@ fn modrinth_make_mod_request(filter SearchFilter, limit int, cycle int) Modrinth
 
 	// make the request
 	config := http.FetchConfig{
+		url: 'https://api.modrinth.com/api/v1/mod'
 		params: p
 	}
 
-	responce := http.fetch('https://api.modrinth.com/api/v1/mod', config) or {
+	responce := http.fetch(config) or {
 		println('http.fetch() failed')
 		panic(err)
 	}
@@ -221,8 +222,9 @@ fn modrinth_get_mod_details(m Mod) ModDetailed {
 	id := if m.id.contains('local-') { m.id[6..] } else { m.id }
 
 	// Prep API requests. I think we can get away with only one config.
-	config := http.FetchConfig{
+	config1 := http.FetchConfig{
 		// See https://github.com/modrinth/labrinth/wiki/API-Documentation
+		url: 'https://api.modrinth.com/api/v1/mod/$id'
 		params: {
 			'index': 'updated'
 			'limit': '100'
@@ -231,14 +233,22 @@ fn modrinth_get_mod_details(m Mod) ModDetailed {
 		}
 	}
 
-	// Make api requests	// TODO: make paralel
+	// Make api requests	// TODO: make paralel?
 	// Fetch detailed mod info
-	responce_mod := http.fetch('https://api.modrinth.com/api/v1/mod/$id', config) or { panic(err) }
+	responce_mod := http.fetch(config1) or { panic(err) }
 	mod := json.decode(ModrinthMod, responce_mod.text) or { panic(err) }
 
 	// Fetch version info
-	responce_versions := http.fetch('https://api.modrinth.com/api/v1/mod/$id/version',
-		config) or { panic(err) }
+	config2 := http.FetchConfig{
+		// See https://github.com/modrinth/labrinth/wiki/API-Documentation
+		url: 'https://api.modrinth.com/api/v1/mod/$id/version'
+		params: {
+			'index': 'updated'
+			'limit': '100'
+		}
+	}
+
+	responce_versions := http.fetch(config2) or { panic(err) }
 	versions := json.decode([]ModrinthVersion, responce_versions.text) or { panic(err) }
 
 	// Convert into generalized structs

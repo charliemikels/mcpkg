@@ -25,8 +25,10 @@ struct GameVersion {
 // In reality it gets every version tag from Modrinth, but at time of writing,
 // it works just fine.
 fn get_mc_versions() []GameVersion {
-	config := http.FetchConfig{}
-	responce := http.fetch('https://api.modrinth.com/api/v1/tag/game_version', config) or {
+	config := http.FetchConfig{
+		url: 'https://api.modrinth.com/api/v1/tag/game_version'
+	}
+	responce := http.fetch(config) or {
 		panic(err)
 	}
 	// responce is a javascript array. There might be a method to import directly
