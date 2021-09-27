@@ -1,6 +1,6 @@
 Module {
 	name: 'mcpkg'
-	description: 'A simple package manager for Minecraft'
+	description: ''
 	version: '0.0.0'
 	license: ''
 	dependencies: []
