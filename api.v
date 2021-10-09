@@ -29,7 +29,7 @@ pub fn load_api(path string) Api {
 			mc_mods_dir: os.join_path(fake_mc_root, 'mods')
 			mcpkg_storage_dir: os.join_path(fake_mc_root, 'mcpkg')
 		}
-	}	else if path != '' {
+	} else if path != '' {
 		// There's something in the path, let's try to load a config file there
 		println('Loading config file at `${os.real_path(path)}`...')
 		api_str := os.read_file(os.real_path(path)) or {
