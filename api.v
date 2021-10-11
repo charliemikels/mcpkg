@@ -57,7 +57,7 @@ pub fn load_api(path string) Api {
 	// Figure out other resources here
 	// current_branch, mod files, etc...
 	api := Api{api_json, path}
-	println(json.encode_pretty(api.ApiJson))
+	// println(json.encode_pretty(api.ApiJson))
 
 	return api
 }
