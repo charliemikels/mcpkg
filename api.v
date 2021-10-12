@@ -12,7 +12,7 @@ struct ApiJson {
 pub struct Api {
 	ApiJson
 mut:
-	config_path string
+	config_path   string
 	mod_platforms map[string]ModPlatform
 	// current_branch Branch
 	// branches []Branch

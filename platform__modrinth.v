@@ -1,7 +1,7 @@
 module mcpkg
 
-struct PlatformModrinth{
-	name string = 'modrinth'
+struct PlatformModrinth {
+	name     string = 'modrinth'
 	home_url string = 'https://modrinth.com/'
 }
 
@@ -35,8 +35,8 @@ struct ModrinthModResult {
 // Used with GET https://api.modrinth.com/api/v1/mod/
 struct ModrinthHitList {
 	hits       []ModrinthModResult
-	offset     int 	//
-	limit      int 	// number of items per return
+	offset     int //
+	limit      int // number of items per return
 	total_hits int
 }
 
@@ -44,13 +44,12 @@ struct ModrinthHitList {
 
 // --== ModPlatform interface fns ==--
 fn (p PlatformModrinth) search_for_mods(search SearchFilter) []Mod {
-
 	mut mod_list := []Mod{}
 	mod_list << Mod{
 		name: 'bad mod'
 		id: '5'
 		platform_string: p.name
-		platform: &p			// NOTE: If C errors crop up again, remove the &
+		platform: &p // NOTE: If C errors crop up again, remove the &
 	}
 	return mod_list
 }
