@@ -13,6 +13,7 @@ pub struct Api {
 	ApiJson
 mut:
 	config_path string
+	mod_platforms map[string]ModPlatform
 	// current_branch Branch
 	// branches []Branch
 }
@@ -30,7 +31,6 @@ pub fn load_api(path string) Api {
 			mcpkg_storage_dir: os.join_path(fake_mc_root, 'mcpkg')
 		}
 	} else if path != '' {
-		// There's something in the path, let's try to load a config file there
 		println('Loading config file at `${os.real_path(path)}`...')
 		api_str := os.read_file(os.real_path(path)) or {
 			panic('Failed to read a file at `${os.real_path(path)}`.\n$err')
@@ -39,7 +39,7 @@ pub fn load_api(path string) Api {
 			panic('Failed to decode json at `${os.real_path(path)}`.\n$err')
 		}
 	} else {
-		// No config given, load default json info
+		// No config given, create default json info
 		os_default_mc_dir := match os.user_os() {
 			'windows' { os.join_path('%appdata%', '.minecraft') } // QUESTION: Might not work? intended for win+R shortcut.
 			'macos' { os.join_path(os.home_dir(), 'Library', 'Application Support', 'minecraft') }
@@ -56,8 +56,12 @@ pub fn load_api(path string) Api {
 
 	// Figure out other resources here
 	// current_branch, mod files, etc...
-	api := Api{api_json, path}
-	// println(json.encode_pretty(api.ApiJson))
 
+	api := Api{
+		ApiJson: api_json
+		config_path: path
+		mod_platforms: mod_platforms_const
+	}
+	// println(json.encode_pretty(api.ApiJson))
 	return api
 }

@@ -1,13 +1,16 @@
 module mcpkg
 
-struct Mod{
-	// ModJson
-	source_platform string
-	id 			string
-	name		string
+struct Mod {
+	ModJson
+	platform ModPlatform		// TODO: This probably _should_ be &ModPlatform, but doing so currently throws a c error.
 	author	string
 // mut:
 // 	versions ModVersions
+}
+struct ModJson {
+	name 						string
+	id 							string
+	platform_string string [json: platform]
 }
 
 // ModVersion is a specific version of a mod.
