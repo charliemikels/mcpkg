@@ -25,7 +25,7 @@ pub struct SearchFilter {
 pub fn (a Api) search_for_mods(s SearchFilter) []Mod {
 	if s.platform_name != '' {
 		p := a.mod_platforms[s.platform_name] or {
-			eprintln('No platform with key `$s.platform_name`')
+			eprintln('No platform with key `$s.platform_name`. Known keys: ${a.mod_platforms.keys()}')
 			return []
 		}
 		return p.search_for_mods(s)
