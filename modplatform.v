@@ -4,7 +4,6 @@ module mcpkg
 // Currently Api copies this into itself at load_api. TODO: Convert to "load_platforms" fn?
 const mod_platforms_const = {
 	'modrinth': ModPlatform(PlatformModrinth{})
-	// 'bogus':    ModPlatform(PlatformBogusPlatform{})
 }
 
 const page_size_const = 10
@@ -53,12 +52,3 @@ pub fn (a Api) search_for_mods(s SearchFilter) ([]Mod) {
 	}
 }
 
-// // Dummy mod platform to test interfaceness.
-// pub struct PlatformBogusPlatform {
-// 	name     string = 'yes'
-// 	home_url string = 'no'
-// }
-//
-// fn (p PlatformBogusPlatform) search_for_mods(s SearchFilter, page PageInfo) []Mod {
-// 	return []
-// }
