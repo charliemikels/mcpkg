@@ -60,7 +60,7 @@ pub fn load_api(path string) Api {
 	api := Api{
 		ApiJson: api_json
 		config_path: path
-		mod_platforms: mod_platforms_const
+		mod_platforms: &mod_platforms_const
 	}
 	// println(json.encode_pretty(api.ApiJson))
 	return api

@@ -48,26 +48,34 @@ struct ModrinthHitList {
 
 // --== Helper fns ==--
 fn (p PlatformModrinth)mmr_to_mcpkg_mod(mmr ModrinthModResult) Mod{
+	urls := {
+		'author': mmr.author_url
+	}
+	extras := ModExtraDetails{
+		links: urls
+		license: {
+			'id': mmr.license
+		}
+		page_url: mmr.page_url
+		date_created: mmr.date_created
+		date_modified: mmr.date_modified
+		downloads: mmr.downloads
+		// follows: mmr.follows
+		// client_side: mmr.client_side
+		// server_side: mmr.server_side
+	}
+
 	mod := Mod{
 		platform: &p
 		platform_string: p.name
 		name: mmr.title
 		slug: mmr.slug
-		id: mmr.mod_id
+		id: if mmr.mod_id.contains('local-') { mmr.mod_id[6..] } else { mmr.mod_id }
 		author: mmr.author
 		description: mmr.description
 		game_versions: mmr.versions
-		downloads: mmr.downloads
-		// follows: mmr.follows
-		page_url: mmr.page_url
 		icon_url: mmr.icon_url
-		author_url: mmr.author_url
-		date_created: mmr.date_created
-		date_modified: mmr.date_modified
-		latest_version: mmr.latest_version
-		license: mmr.license
-		// client_side: mmr.client_side
-		// server_side: mmr.server_side
+		extras: extras
 	}
 	return mod
 }

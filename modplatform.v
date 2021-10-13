@@ -13,8 +13,8 @@ interface ModPlatform {
 	// api &Api
 	name string
 	home_url string
-	search_for_mods(SearchFilter, PageInfo) []Mod
 	// get_updates([]Mod) []ModVersion
+	search_for_mods(search SearchFilter, page PageInfo) []Mod
 }
 
 pub struct SearchFilter {

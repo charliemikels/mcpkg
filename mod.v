@@ -1,34 +1,40 @@
 module mcpkg
 
 struct Mod {
-	ModJson
+	ModId
 	platform 				ModPlatform // This probably _should_ be &ModPlatform, but doing so currently throws a c error.
 	author   				string
 	description 		string
 	game_versions		[]string
-	downloads				int
-	// follows				int
-	page_url				string
 	icon_url				string
-	author_url			string
-	date_created		string
-	date_modified		string
-	latest_version	string
-	license					string
-	// client_side: 	string
-	// server_side: 	string
-
-	// mut:
-	// 	versions []ModVersions
+mut:
+	extras          ModExtraDetails
+	versions        ModVersion
 }
 
-struct ModJson {
+struct ModId {
 	name            string
 	slug						string
 	id              string
 	platform_string string [json: platform]
 	// installed_version := ModVersion
 }
+
+struct ModExtraDetails {
+	page_url				string
+	date_created		string
+	date_modified		string
+	// published					string	// same as date_created?
+	// catagories				[]string
+	downloads					int
+	// follows				int
+	description_full  string
+	license						map[string]string
+	links							map[string]string
+	// client_side: 	string
+	// server_side: 	string
+}
+
 
 // ModVersion is a specific version of a mod.
 // When the author updates the mod, we'll see it as a new version.
