@@ -9,7 +9,7 @@ struct Mod {
 	icon_url				string
 mut:
 	extras          ModExtraDetails
-	versions        ModVersion
+	versions        []ModVersion
 }
 
 struct ModId {
@@ -40,12 +40,23 @@ struct ModExtraDetails {
 // When the author updates the mod, we'll see it as a new version.
 struct ModVersion {
 	ModVersionJson
-	mod        &Mod
+	mod_id   				string
+	changelog 			string
+	dependencies	 	[]ModId// list of version IDs
+	game_versions 	[]string
+	version_type 		string // "release" "beta" "alpha"
+	loaders 				[]string // merge with dependencies??
+	// author_id			string
+	date_published	string
+	downloads				int
+	// files 					[]ModVersionFile
 }
 
 struct ModVersionJson {
-	version_id string
-	files      []ModVersionFile
+	name 						string
+	version_number	string
+	version_id 			string
+	files      			[]ModVersionFile
 }
 
 struct ModVersionFile {
@@ -53,4 +64,5 @@ struct ModVersionFile {
 	hashes   map[string]string
 	url      string
 	filename string
+	primary  bool
 }

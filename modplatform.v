@@ -12,8 +12,8 @@ interface ModPlatform {
 	// api &Api
 	name string
 	home_url string
-	// get_updates([]Mod) []ModVersion
 	search_for_mods(search SearchFilter, page PageInfo) []Mod
+	get_mod_by_id(mod_id string) Mod
 }
 
 pub struct SearchFilter {
@@ -52,3 +52,18 @@ pub fn (a Api) search_for_mods(s SearchFilter) ([]Mod) {
 	}
 }
 
+pub fn (a Api) get_mod_by_id(mod_id string, platform_name string) []Mod {
+	if platform_name != '' {
+		p := a.mod_platforms[platform_name] or {
+			eprintln('No platform with key `$platform_name`. Known keys: ${a.mod_platforms.keys()}')
+			return []Mod{}
+		}
+		return [ p.get_mod_by_id(mod_id) ]
+	} else {
+		mut mod_list := []Mod{}
+		for _, p in a.mod_platforms {
+			mod_list << p.get_mod_by_id(mod_id)
+		}
+		return mod_list
+	}
+}
