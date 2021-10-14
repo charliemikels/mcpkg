@@ -227,11 +227,9 @@ fn (p PlatformModrinth) search_for_mods(search SearchFilter, page PageInfo) []Mo
 	}
 	facets := '[$facet_versions]'
 
-	// http prep...
-	offset := page.number * page.items_per_page
 	mut paramiters := {
 		'limit':        '$page.items_per_page'
-		'offset':       '$offset'
+		'offset':       '${page.number * page.items_per_page}'
 		'query':        search.query
 		'facets':       facets
 		'project_type': 'mod'
@@ -244,12 +242,13 @@ fn (p PlatformModrinth) search_for_mods(search SearchFilter, page PageInfo) []Mo
 		// with V, so we'll delete it instead.
 	}
 
-	config := http.FetchConfig{
+	mut config := http.FetchConfig{
 		// url: 'https://api.modrinth.com/v2/search'
 		// url: 'https://staging-api.modrinth.com/v2/search'
 		url: 'https://api.modrinth.com/api/v1/mod' // TODO: looks like v2 isn't quite ready yet. Using v1 for now, But check back and upgrade later.
 		params: paramiters
 	}
+	config.header.add(http.CommonHeader.authorization, p.auth_key)
 
 	responce := http.fetch(config) or { panic(err) }
 
@@ -274,11 +273,12 @@ fn (p PlatformModrinth) search_for_mods(search SearchFilter, page PageInfo) []Mo
 // get_mod_by_id: wrapper for GET 'https://api.modrinth.com/v2/project/${mod_id}'
 // See also: https://docs.modrinth.com/api-spec/#operation/getProject
 fn (p PlatformModrinth) get_mod_by_id(mod_id string) Mod {
-	config := http.FetchConfig{
+	mut config := http.FetchConfig{
 		// url: 'https://api.modrinth.com/v2/project/${mod_id}'
 		url: 'https://api.modrinth.com/api/v1/mod/$mod_id' // TODO: looks like v2 isn't quite ready yet. Using v1 for now, But check back and upgrade later.
 		// params: {}
 	}
+	config.header.add(http.CommonHeader.authorization, p.auth_key)
 
 	responce_mod := http.fetch(config) or { panic(err) }
 	mod_full := json.decode(ModrinthModFull, responce_mod.text) or { panic(err) }
@@ -287,9 +287,11 @@ fn (p PlatformModrinth) get_mod_by_id(mod_id string) Mod {
 }
 
 fn (p PlatformModrinth) get_mod_versions_by_id(mod_id string) []ModVersion {
-	config := http.FetchConfig{
+	mut config := http.FetchConfig{
 		url: 'https://api.modrinth.com/api/v1/mod/$mod_id/version'
 	}
+	config.header.add(http.CommonHeader.authorization, p.auth_key)
+
 	versions_responce := http.fetch(config) or { panic(err) }
 	versions := json.decode([]ModrinthModVersion, versions_responce.text) or { panic(err) }
 
