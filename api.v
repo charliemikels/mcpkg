@@ -18,7 +18,15 @@ mut:
 	auth_keys 		map[string]string
 	// current_branch Branch
 	// branches []Branch
+	notifications []Notification
 }
+
+struct Notification {
+	title		string
+	msg 		string
+	urgency string // "low", "med", "high"
+}
+
 
 
 // load_api loads a configfile into an Api, or returns a default.

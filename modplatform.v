@@ -11,6 +11,12 @@ fn (mut a Api) load_mod_platforms() map[string]ModPlatform {
 	mut platform_map := map[string]ModPlatform
 	for p in platforms {
 		if p.requires_authentication && a.auth_keys[p.name] == '' {
+			n := Notification {
+				title: '$p.name requires authentication.'
+				msg: 'No authentication key was found for $p.name in ${a.auth_keys_path}\n$p.name will be skipped.'
+				urgency: 'high'
+			}
+			a.notifications << n
 			continue
 		}
 
