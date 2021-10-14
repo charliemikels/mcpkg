@@ -1,15 +1,21 @@
 module mcpkg
 
 // load_mod_platforms runs ModPlatform constructors and converts them into a map.
-// This is ran by load_api() 
-fn (a Api) load_mod_platforms() map[string]ModPlatform {
-	mut platforms := []ModPlatform
+// This is ran by load_api()
+fn (mut a Api) load_mod_platforms() map[string]ModPlatform {
+	mut platforms := []ModPlatform{}
 	// vv new platforms here vv
 	platforms << a.new_platform_modrinth()
 
 
 	mut platform_map := map[string]ModPlatform
-	for p in platforms { platform_map[p.name] = p	}
+	for p in platforms {
+		if p.requires_authentication && a.auth_keys[p.name] == '' {
+			continue
+		}
+
+		platform_map[p.name] = p
+	}
 	return platform_map
 }
 
@@ -19,6 +25,7 @@ interface ModPlatform {
 	// api &Api
 	name string
 	home_url string
+	requires_authentication bool
 	search_for_mods(search SearchFilter, page PageInfo) []Mod
 	get_mod_by_id(mod_id string) Mod
 }

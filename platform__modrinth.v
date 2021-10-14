@@ -6,6 +6,7 @@ import json
 struct PlatformModrinth {
 	name     string = 'modrinth'
 	home_url string = 'https://modrinth.com/'
+	requires_authentication bool = true
 	auth_key string
 }
 
@@ -184,8 +185,6 @@ fn (p PlatformModrinth)mmf_to_mcpkg_mod(mmf ModrinthModFull) Mod {
 }
 
 fn (p PlatformModrinth)mmv_to_mcpkg_mod_version(mmv ModrinthModVersion) ModVersion {
-	// files := []
-
 	version := ModVersion {
 		name: mmv.name
 		version_number: mmv.version_number
@@ -213,7 +212,6 @@ fn (p PlatformModrinth)mmv_to_mcpkg_mod_version(mmv ModrinthModVersion) ModVersi
 	}
 
 	// println(version)
-
 	return version
 }
 

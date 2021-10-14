@@ -20,10 +20,11 @@ mut:
 	// branches []Branch
 }
 
+
 // load_api loads a configfile into an Api, or returns a default.
 pub fn load_api(path string) Api {
+	// Load main Api file
 	mut api_json := ApiJson{}
-
 	if path == 'tmp' {
 		// special case
 		fake_mc_root := os.join_path(os.temp_dir(), 'mcpkg_fake_mc_root')
@@ -62,17 +63,18 @@ pub fn load_api(path string) Api {
 		ApiJson: api_json
 		config_path: path
 	}
-	// Figure out other resources here
-	// current_branch, mod files, etc...
 
-	// TODO: load from file!
-	auth_keys := {
-		'one': 'red'
-		'two': 'blue'
-		'modrinth': '1234567890'
+	// Generated data:
+
+	// auth_keys
+	if os.exists(os.real_path(api_json.auth_keys_path)) {
+		auth_keys_file := os.read_file(os.real_path(api_json.auth_keys_path)) or { panic(err) }
+		api.auth_keys = json.decode(map[string]string, auth_keys_file) 		  or { panic(err) }
 	}
 
-	api.auth_keys = auth_keys.clone()
+	// branches
+	// installed mods
+	// etc...
 
 	api.mod_platforms = api.load_mod_platforms()
 
