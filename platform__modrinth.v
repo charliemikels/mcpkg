@@ -4,10 +4,10 @@ import net.http
 import json
 
 struct PlatformModrinth {
-	name     string = 'modrinth'
-	home_url string = 'https://modrinth.com/'
-	requires_authentication bool = true
-	auth_key string
+	name                    string = 'modrinth'
+	home_url                string = 'https://modrinth.com/'
+	requires_authentication bool   = true
+	auth_key                string
 }
 
 fn (a Api) new_platform_modrinth() ModPlatform {
@@ -41,74 +41,74 @@ struct ModrinthModResult {
 	client_side    string // (optional, required, unsupported, others?)
 	server_side    string // (optional, required, unsupported, others?)
 	host           string
-	error 		 		 string
+	error          string
 }
 
 // ModrinthHitList: info about the search.
 // Used with GET https://api.modrinth.com/v2/search
 struct ModrinthHitList {
-	hits       []ModrinthModResult
-	offset     int // skip number of items
-	limit      int // number of items per return
-	total_hits int
-	error 		  string
+	hits        []ModrinthModResult
+	offset      int // skip number of items
+	limit       int // number of items per return
+	total_hits  int
+	error       string
 	description string // only used if error != ''
 }
 
 // Detailed info about a mod
 // Used with get_mod_by_id()
 struct ModrinthModFull {
-	id	 string
-	slug string
-	team string // ID of team responcible for Mod.
-	title string
+	id          string
+	slug        string
+	team        string // ID of team responcible for Mod.
+	title       string
 	description string
-	body string // longer description
+	body        string // longer description
 	// body_url is still returned to us, but it allways null so far.
-	published string	// same as date_created ?
-	updated string // same as date_modified ?
-	status string // Modinth upload status like "approved". Likely for mod devs.
-	license map[string]string
+	published     string // same as date_created ?
+	updated       string // same as date_modified ?
+	status        string // Modinth upload status like "approved". Likely for mod devs.
+	license       map[string]string
 	client_side   string // (optional, required, unsupported, others?)
 	server_side   string // (optional, required, unsupported, others?)
 	downloads     int
 	follows       int
 	categories    []string
 	versions      []string // IDs of versions of the mod.
-	icon_url			string
-	issues_url		string
-	sources_url 	string
-	wiki_url			string
-	discord_url		string
-	donation_urls []map[string]string	// Convert to struct?? (id, name, url)
+	icon_url      string
+	issues_url    string
+	sources_url   string
+	wiki_url      string
+	discord_url   string
+	donation_urls []map[string]string // Convert to struct?? (id, name, url)
 }
 
 struct ModrinthModVersion {
-	id						string
-	mod_id 				string // TODO: This is called "project_id" in api v2
-	name 					string	// name of the version
+	id             string
+	mod_id         string // TODO: This is called "project_id" in api v2
+	name           string // name of the version
 	version_number string
-	changelog 		string
-	dependencies 	[]string // list of version IDs
-	game_versions []string
-	version_type 	string // "release" "beta" "alpha"
-	loaders 			[]string // mod loaders
-	featured 			bool
-	author_id 		string
+	changelog      string
+	dependencies   []string // list of version IDs
+	game_versions  []string
+	version_type   string   // "release" "beta" "alpha"
+	loaders        []string // mod loaders
+	featured       bool
+	author_id      string
 	date_published string
-	downloads 		int
-	files 				[]ModrinthModVersionFiles
+	downloads      int
+	files          []ModrinthModVersionFiles
 }
 
 struct ModrinthModVersionFiles {
-	hashes 	map[string]string	// sha512, sha1
-	url 		string
+	hashes   map[string]string // sha512, sha1
+	url      string
 	filename string
-	primary	bool
+	primary  bool
 }
 
 // --== Helper fns ==--
-fn (p PlatformModrinth)mmr_to_mcpkg_mod(mmr ModrinthModResult) Mod {
+fn (p PlatformModrinth) mmr_to_mcpkg_mod(mmr ModrinthModResult) Mod {
 	urls := {
 		'author': mmr.author_url
 	}
@@ -141,17 +141,17 @@ fn (p PlatformModrinth)mmr_to_mcpkg_mod(mmr ModrinthModResult) Mod {
 	return mod
 }
 
-fn (p PlatformModrinth)mmf_to_mcpkg_mod(mmf ModrinthModFull) Mod {
+fn (p PlatformModrinth) mmf_to_mcpkg_mod(mmf ModrinthModFull) Mod {
 	mod_id := if mmf.id.contains('local-') { mmf.id[6..] } else { mmf.id }
 
 	mut urls := {
 		// 'author': mmf.author_url
-		'issues': mmf.issues_url
-		'wiki': 	mmf.wiki_url
+		'issues':  mmf.issues_url
+		'wiki':    mmf.wiki_url
 		'discord': mmf.discord_url
 	}
 
-	for donation_platform in mmf.donation_urls{
+	for donation_platform in mmf.donation_urls {
 		urls[donation_platform['id']] = donation_platform['url']
 	}
 
@@ -184,31 +184,27 @@ fn (p PlatformModrinth)mmf_to_mcpkg_mod(mmf ModrinthModFull) Mod {
 	return mod
 }
 
-fn (p PlatformModrinth)mmv_to_mcpkg_mod_version(mmv ModrinthModVersion) ModVersion {
-	version := ModVersion {
+fn (p PlatformModrinth) mmv_to_mcpkg_mod_version(mmv ModrinthModVersion) ModVersion {
+	version := ModVersion{
 		name: mmv.name
 		version_number: mmv.version_number
 		version_id: mmv.id
 		mod_id: mmv.mod_id
 		changelog: mmv.changelog
-		dependencies: mmv.dependencies.map(
-			ModId { // convert to external var??
-				id: it
-				platform_string: p.name
-			}
-		)
+		dependencies: mmv.dependencies.map(ModId{ // convert to external var??
+			id: it
+			platform_string: p.name
+		})
 		game_versions: mmv.game_versions
 		version_type: mmv.version_type
 		loaders: mmv.loaders
 		date_published: mmv.date_published
 		downloads: mmv.downloads
-		files: mmv.files.map(
-			ModVersionFile{
-				hashes: it.hashes
-				url: it.url
-				filename: it.filename
-			}
-		)
+		files: mmv.files.map(ModVersionFile{
+			hashes: it.hashes
+			url: it.url
+			filename: it.filename
+		})
 	}
 
 	// println(version)
@@ -220,11 +216,12 @@ fn (p PlatformModrinth)mmv_to_mcpkg_mod_version(mmv ModrinthModVersion) ModVersi
 // search_for_mods: wrapper for GET https://api.modrinth.com/v2/search
 // See also: https://docs.modrinth.com/api-spec/#operation/searchProjects
 fn (p PlatformModrinth) search_for_mods(search SearchFilter, page PageInfo) []Mod {
-
 	// Build facets. See https://docs.modrinth.com/docs/tutorials/api_search/#facets
 	mut facet_versions := ''
 	if search.game_versions !in [[''], []] {
-		for v in search.game_versions { facet_versions += '"versions:$v",' }
+		for v in search.game_versions {
+			facet_versions += '"versions:$v",'
+		}
 		facet_versions = facet_versions[..facet_versions.len - 1] // trim trailing `,`
 		facet_versions = '[' + facet_versions + ']'
 	}
@@ -233,11 +230,11 @@ fn (p PlatformModrinth) search_for_mods(search SearchFilter, page PageInfo) []Mo
 	// http prep...
 	offset := page.number * page.items_per_page
 	mut paramiters := {
-		'limit':  '$page.items_per_page'
-		'offset': '$offset'
-		'query':  search.query
-		'facets':  facets
-		'project_type':'mod'
+		'limit':        '$page.items_per_page'
+		'offset':       '$offset'
+		'query':        search.query
+		'facets':       facets
+		'project_type': 'mod'
 	}
 	if facets == '[]' {
 		paramiters.delete('facets')
@@ -250,19 +247,19 @@ fn (p PlatformModrinth) search_for_mods(search SearchFilter, page PageInfo) []Mo
 	config := http.FetchConfig{
 		// url: 'https://api.modrinth.com/v2/search'
 		// url: 'https://staging-api.modrinth.com/v2/search'
-		url: 'https://api.modrinth.com/api/v1/mod'		// TODO: looks like v2 isn't quite ready yet. Using v1 for now, But check back and upgrade later.
+		url: 'https://api.modrinth.com/api/v1/mod' // TODO: looks like v2 isn't quite ready yet. Using v1 for now, But check back and upgrade later.
 		params: paramiters
 	}
 
 	responce := http.fetch(config) or { panic(err) }
 
-	hit_list := json.decode(ModrinthHitList, responce.text) or { panic(err)	}
+	hit_list := json.decode(ModrinthHitList, responce.text) or { panic(err) }
 	if hit_list.error != '' {
 		eprintln('Modrinth API returned an error: \n$responce.text')
 		exit(1)
 	}
 
-	mod_list := hit_list.hits.map( p.mmr_to_mcpkg_mod(it) )
+	mod_list := hit_list.hits.map(p.mmr_to_mcpkg_mod(it))
 	return mod_list
 
 	// TODO: Tell searcher how many pages there are. (Implement 'struct ModList{}'?)
@@ -279,7 +276,7 @@ fn (p PlatformModrinth) search_for_mods(search SearchFilter, page PageInfo) []Mo
 fn (p PlatformModrinth) get_mod_by_id(mod_id string) Mod {
 	config := http.FetchConfig{
 		// url: 'https://api.modrinth.com/v2/project/${mod_id}'
-		url: 'https://api.modrinth.com/api/v1/mod/$mod_id'		// TODO: looks like v2 isn't quite ready yet. Using v1 for now, But check back and upgrade later.
+		url: 'https://api.modrinth.com/api/v1/mod/$mod_id' // TODO: looks like v2 isn't quite ready yet. Using v1 for now, But check back and upgrade later.
 		// params: {}
 	}
 
@@ -296,5 +293,5 @@ fn (p PlatformModrinth) get_mod_versions_by_id(mod_id string) []ModVersion {
 	versions_responce := http.fetch(config) or { panic(err) }
 	versions := json.decode([]ModrinthModVersion, versions_responce.text) or { panic(err) }
 
-	return versions.map( p.mmv_to_mcpkg_mod_version(it) )
+	return versions.map(p.mmv_to_mcpkg_mod_version(it))
 }

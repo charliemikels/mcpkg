@@ -7,13 +7,12 @@ fn (mut a Api) load_mod_platforms() map[string]ModPlatform {
 	// vv new platforms here vv
 	platforms << a.new_platform_modrinth()
 
-
-	mut platform_map := map[string]ModPlatform
+	mut platform_map := map[string]ModPlatform{}
 	for p in platforms {
 		if p.requires_authentication && a.auth_keys[p.name] == '' {
-			n := Notification {
+			n := Notification{
 				title: '$p.name requires authentication.'
-				msg: 'No authentication key was found for $p.name in ${a.auth_keys_path}\n$p.name will be skipped.'
+				msg: 'No authentication key was found for $p.name in $a.auth_keys_path\n$p.name will be skipped.'
 				urgency: 'high'
 			}
 			a.notifications << n
@@ -43,23 +42,23 @@ pub struct SearchFilter {
 }
 
 pub struct PageInfo {
-	number     			int
-	items_per_page  int = 10
-	total_pages			int = -1
-	total_items			int = -1
+	number         int
+	items_per_page int = 10
+	total_pages    int = -1
+	total_items    int = -1
 }
 
 // search_for_mods forwards a search request to all mod platforms.
 // If a platform is provided in SearchFilter, use only that platform.
 // TODO: Move to mod.v ?
-pub fn (a Api) search_for_mods(s SearchFilter) ([]Mod) {
+pub fn (a Api) search_for_mods(s SearchFilter) []Mod {
 	page_num := 0 // TODO: put in search_for_mods(s SearchFilter, page_num int)
 	page := PageInfo{
 		number: page_num
 	}
 	if s.platform_name != '' {
 		p := a.mod_platforms[s.platform_name] or {
-			eprintln('No platform with key `$s.platform_name`. Known keys: ${a.mod_platforms.keys()}')
+			eprintln('No platform with key `$s.platform_name`. Known keys: $a.mod_platforms.keys()')
 			return []Mod{}
 		}
 		return p.search_for_mods(s, page)
@@ -75,10 +74,10 @@ pub fn (a Api) search_for_mods(s SearchFilter) ([]Mod) {
 pub fn (a Api) get_mod_by_id(mod_id string, platform_name string) []Mod {
 	if platform_name != '' {
 		p := a.mod_platforms[platform_name] or {
-			eprintln('No platform with key `$platform_name`. Known keys: ${a.mod_platforms.keys()}')
+			eprintln('No platform with key `$platform_name`. Known keys: $a.mod_platforms.keys()')
 			return []Mod{}
 		}
-		return [ p.get_mod_by_id(mod_id) ]
+		return [p.get_mod_by_id(mod_id)]
 	} else {
 		mut mod_list := []Mod{}
 		for _, p in a.mod_platforms {

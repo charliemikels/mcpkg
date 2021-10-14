@@ -7,7 +7,7 @@ struct ApiJson {
 	mc_root_dir       string
 	mc_mods_dir       string
 	mcpkg_storage_dir string
-	auth_keys_path 		string
+	auth_keys_path    string
 }
 
 pub struct Api {
@@ -15,19 +15,17 @@ pub struct Api {
 mut:
 	config_path   string
 	mod_platforms map[string]ModPlatform
-	auth_keys 		map[string]string
+	auth_keys     map[string]string
 	// current_branch Branch
 	// branches []Branch
 	notifications []Notification
 }
 
 struct Notification {
-	title		string
-	msg 		string
+	title   string
+	msg     string
 	urgency string // "low", "med", "high"
 }
-
-
 
 // load_api loads a configfile into an Api, or returns a default.
 pub fn load_api(path string) Api {
@@ -60,10 +58,10 @@ pub fn load_api(path string) Api {
 		}
 
 		api_json = ApiJson{
-			mc_root_dir: 			 os_default_mc_dir
-			mc_mods_dir: 			 os.join_path(os_default_mc_dir, 'mods')
+			mc_root_dir: os_default_mc_dir
+			mc_mods_dir: os.join_path(os_default_mc_dir, 'mods')
 			mcpkg_storage_dir: os.join_path(os_default_mc_dir, 'mcpkg')
-			auth_keys_path: 	 os.join_path(os_default_mc_dir, 'mcpkg', 'auth_keys.json')
+			auth_keys_path: os.join_path(os_default_mc_dir, 'mcpkg', 'auth_keys.json')
 		}
 	}
 
@@ -77,7 +75,7 @@ pub fn load_api(path string) Api {
 	// auth_keys
 	if os.exists(os.real_path(api_json.auth_keys_path)) {
 		auth_keys_file := os.read_file(os.real_path(api_json.auth_keys_path)) or { panic(err) }
-		api.auth_keys = json.decode(map[string]string, auth_keys_file) 		  or { panic(err) }
+		api.auth_keys = json.decode(map[string]string, auth_keys_file) or { panic(err) }
 	}
 
 	// branches
