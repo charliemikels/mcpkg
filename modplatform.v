@@ -1,9 +1,16 @@
 module mcpkg
 
-// Idealy, build this list from a dir of platform plug-ins, but this will work fine.
-// Currently Api copies this into itself at load_api. TODO: Convert to "load_platforms" fn?
-const mod_platforms_const = {
-	'modrinth': ModPlatform(PlatformModrinth{})
+// load_mod_platforms runs ModPlatform constructors and converts them into a map.
+// This is ran by load_api() 
+fn (a Api) load_mod_platforms() map[string]ModPlatform {
+	mut platforms := []ModPlatform
+	// vv new platforms here vv
+	platforms << a.new_platform_modrinth()
+
+
+	mut platform_map := map[string]ModPlatform
+	for p in platforms { platform_map[p.name] = p	}
+	return platform_map
 }
 
 const page_size_const = 10

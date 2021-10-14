@@ -6,6 +6,14 @@ import json
 struct PlatformModrinth {
 	name     string = 'modrinth'
 	home_url string = 'https://modrinth.com/'
+	auth_key string
+}
+
+fn (a Api) new_platform_modrinth() ModPlatform {
+	modrinth := PlatformModrinth{
+		auth_key: a.auth_keys['modrinth'] or { '' }
+	}
+	return ModPlatform(modrinth)
 }
 
 // --== Api responce structs ==--
