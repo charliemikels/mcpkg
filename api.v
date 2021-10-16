@@ -84,6 +84,6 @@ pub fn load_api(path string) Api {
 
 	api.mod_platforms = api.load_mod_platforms()
 
-	println(api)
+	// println(api)
 	return api
 }
