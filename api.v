@@ -24,12 +24,14 @@ mut:
 struct Notification {
 	title   string
 	msg     string
-	urgency string // "low", "med", "high"
+	urgency string = 'low' // "low", "med", "high"
 }
 
 // load_api loads a configfile into an Api, or returns a default.
 pub fn load_api(path string) Api {
 	// Load main Api file
+	// quiet
+
 	mut api_json := ApiJson{}
 	if path == 'tmp' {
 		// special case
