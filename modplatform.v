@@ -29,9 +29,9 @@ interface ModPlatform {
 	home_url string
 	requires_authentication bool
 	// TODO: Set all these methods to also return []Notification, rather than fenagaling the `return error()` system.
-	search_for_mods(search SearchFilter, page PageInfo) ([]Mod, []Notification)
-	get_mod_by_id(mod_id string) (Mod, []Notification)
-	get_versions_by_mod_id(mod_id string) ([]ModVersion, []Notification)
+	search_for_mods(search SearchFilter, page PageInfo) ?[]Mod
+	get_mod_by_id(mod_id string) ?Mod
+	get_versions_by_mod_id(mod_id string) ?[]ModVersion
 }
 
 pub struct SearchFilter {
@@ -49,41 +49,51 @@ pub struct PageInfo {
 
 // search_for_mods forwards a search request to all mod platforms.
 // If a platform is provided in SearchFilter, use only that platform.
-pub fn (mut a Api) search_for_mods(s SearchFilter) ([]Mod, []Notification) {
-	mut notifications := []Notification{}
+pub fn (mut a Api) search_for_mods(s SearchFilter) []Mod {
 	page_num := 0 // TODO: put in search_for_mods(s SearchFilter, page_num int)
 	page := PageInfo{
 		number: page_num
 	}
 	if s.platform_name != '' {
 		mut p := a.mod_platforms[s.platform_name] or {
-			notifications << Notification{
+			a.notifications << Notification{
 				title: 'No platform $s.platform_name',
 				msg: 'No known platform with key `$s.platform_name`. Known keys: $a.mod_platforms.keys()',
 			}
-			return []Mod{}, notifications
+			return []Mod{}
 		}
-		return p.search_for_mods(s, page)
+		return p.search_for_mods(s, page) or {
+			a.notifications << err_msg_to_notification(err.msg)
+			return []Mod{}
+		}
 
 	} else {
 		mut mod_list := []Mod{}
 		for _, p in a.mod_platforms {
-			mod, notifs := p.search_for_mods(s, page)
+			mod := p.search_for_mods(s, page) or {
+				a.notifications << err_msg_to_notification(err.msg)
+				continue
+			}
 			mod_list << mod
-			notifications << notifs
 		}
-		return mod_list, notifications
+		return mod_list
 	}
 }
 
-pub fn (a Api) get_full_mod(mod Mod) (Mod, []Notification) {
-	return mod.platform.get_mod_by_id(mod.id)
+pub fn (mut a Api) get_full_mod(mod Mod) Mod {
+	return mod.platform.get_mod_by_id(mod.id) or {
+		a.notifications << err_msg_to_notification(err.msg)
+		return mod
+	}
 }
 
 // pub fn (a Api) get_full_version(ver ModVersion) ModVersion {
 // 	return mod.platform.get_version_by_id(ModVersion.id)
 // }
 
-pub fn (mut a Api) get_mod_versions(mod Mod) ([]ModVersion, []Notification) {
-	return mod.platform.get_versions_by_mod_id(mod.id)
+pub fn (mut a Api) get_mod_versions(mod Mod) []ModVersion {
+	return mod.platform.get_versions_by_mod_id(mod.id) or {
+		a.notifications << err_msg_to_notification(err.msg)
+		return []ModVersion{}
+	}
 }

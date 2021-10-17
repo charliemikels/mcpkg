@@ -19,8 +19,7 @@ fn (a Api) new_platform_modrinth() ModPlatform {
 
 // search_for_mods: wrapper for GET https://api.modrinth.com/v2/search
 // See also: https://docs.modrinth.com/api-spec/#operation/searchProjects
-fn (p PlatformModrinth) search_for_mods(search SearchFilter, page PageInfo) ([]Mod, []Notification) {
-	mut notifications := []Notification{}
+fn (p PlatformModrinth) search_for_mods(search SearchFilter, page PageInfo) ?[]Mod {
 	// Build facets. See https://docs.modrinth.com/docs/tutorials/api_search/#facets
 	mut facet_versions := ''
 	if search.game_versions !in [[''], []] {
@@ -56,18 +55,16 @@ fn (p PlatformModrinth) search_for_mods(search SearchFilter, page PageInfo) ([]M
 	config.header.add(http.CommonHeader.authorization, p.auth_key)
 
 	responce := http.fetch(config) or {
-		notifications << Notification{
+		return error( Notification {
 			title: '${@FN} failed to fetch json'
 			msg: err.msg
-		}
-		return []Mod{}, notifications
+		}.str() )
 	}
 	responce_decoded := json2.raw_decode(responce.text) or {
-		notifications << Notification{
+		return error( Notification {
 			title: '${@FN} failed to decode json'
 			msg: err.msg
-		}
-		return []Mod{}, notifications
+		}.str() )
 	}
 
 	mut mod_list := []Mod{}
@@ -75,11 +72,10 @@ fn (p PlatformModrinth) search_for_mods(search SearchFilter, page PageInfo) ([]M
 	for key, val in responce_decoded.as_map() {
 		match key {
 			'error' {
-				notifications << Notification{
+				return error( Notification {
 					title: 'Modrinth.${@FN} includes an error.'
 					msg: responce_decoded.as_map().str()
-				}
-				return []Mod{}, notifications
+				}.str() )
 			}
 			'limit' {} // items per return. 	num_pages := total_hits / limit
 			'offset' {} // cuurent_page := offset / limit
@@ -120,14 +116,12 @@ fn (p PlatformModrinth) search_for_mods(search SearchFilter, page PageInfo) ([]M
 			else {}
 		}
 	}
-	return mod_list, notifications // TODO: also return remaining search pages. see offset, limit, and total_hits
+	return mod_list // TODO: also return remaining search pages. see offset, limit, and total_hits
 }
 
 // get_mod_by_id: wrapper for GET 'https://api.modrinth.com/v2/project/${mod_id}'
 // See also: https://docs.modrinth.com/api-spec/#operation/getProject
-fn (p PlatformModrinth) get_mod_by_id(mod_id string) (Mod, []Notification) {
-	mut notifications := []Notification{}
-
+fn (p PlatformModrinth) get_mod_by_id(mod_id string) ?Mod {
 	mut config := http.FetchConfig{
 		// url: 'https://api.modrinth.com/v2/project/${mod_id}'
 		url: 'https://api.modrinth.com/api/v1/mod/$mod_id' // TODO: looks like v2 isn't quite ready yet. Using v1 for now, But check back and upgrade later.
@@ -135,18 +129,16 @@ fn (p PlatformModrinth) get_mod_by_id(mod_id string) (Mod, []Notification) {
 	config.header.add(http.CommonHeader.authorization, p.auth_key)
 
 	responce := http.fetch(config) or {
-		notifications << Notification{
+		return error( Notification {
 			title: '${@FN} failed to fetch json'
 			msg: err.msg
-		}
-		return Mod{}, notifications
+		}.str() )
 	}
 	responce_decoded := json2.raw_decode(responce.text) or {
-		notifications << Notification{
+		return error( Notification {
 			title: '${@FN} failed to decode json'
 			msg: err.msg
-		}
-		return Mod{}, notifications
+		}.str() )
 	}
 
 	mut mod := Mod{
@@ -156,11 +148,10 @@ fn (p PlatformModrinth) get_mod_by_id(mod_id string) (Mod, []Notification) {
 	for k, v in responce_decoded.as_map() {
 		match k {
 			'error' {
-				notifications << Notification{
+				return error( Notification {
 					title: 'Modrinth.${@FN} includes an error.'
 					msg: responce_decoded.as_map().str()
-				}
-				return Mod{}, notifications
+				}.str() )
 			}
 			'id' { mod.id = v.str()	}
 			'slug' { mod.slug = v.str() }
@@ -204,32 +195,28 @@ fn (p PlatformModrinth) get_mod_by_id(mod_id string) (Mod, []Notification) {
 			else {}
 		}
 	}
-	return mod, notifications
+	return mod
 }
 
 // get_mod_by_id: wrapper for GET 'https://api.modrinth.com/api/v1/mod/$mod_id/version'
 // See also: ____
-fn (p PlatformModrinth) get_versions_by_mod_id(mod_id string) ([]ModVersion, []Notification) {
-	mut notifications := []Notification{}
-
+fn (p PlatformModrinth) get_versions_by_mod_id(mod_id string) ?[]ModVersion {
 	mut config := http.FetchConfig{
 		url: 'https://api.modrinth.com/api/v1/mod/$mod_id/version'
 	}
 	config.header.add(http.CommonHeader.authorization, p.auth_key)
 
 	responce := http.fetch(config) or {
-		notifications << Notification{
+		return error( Notification {
 			title: '${@FN} failed to fetch json'
 			msg: err.msg
-		}
-		return []ModVersion{}, notifications
+		}.str() )
 	}
 	responce_decoded := json2.raw_decode(responce.text) or {
-		notifications << Notification{
+		return error( Notification {
 			title: '${@FN} failed to decode json'
 			msg: err.msg
-		}
-		return []ModVersion{}, notifications
+		}.str() )
 	}
 
 	parrent_mod := Mod{
@@ -248,11 +235,10 @@ fn (p PlatformModrinth) get_versions_by_mod_id(mod_id string) ([]ModVersion, []N
 		for k, v in version.as_map() {
 			match k {
 				'error' {
-					notifications << Notification{
+					return error( Notification {
 						title: 'Modrinth.${@FN} includes an error.'
 						msg: responce_decoded.as_map().str()
-					}
-					return []ModVersion{}, notifications
+					}.str() )
 				}
 				'id' { mod_version.id = v.str() }
 				'mod_id' {} // Parrent mod handled in init statement
@@ -296,5 +282,5 @@ fn (p PlatformModrinth) get_versions_by_mod_id(mod_id string) ([]ModVersion, []N
 		}
 		mod_versions << mod_version
 	}
-	return mod_versions, notifications
+	return mod_versions
 }

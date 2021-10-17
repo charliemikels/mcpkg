@@ -89,3 +89,20 @@ pub fn load_api(path string) Api {
 	// println(api)
 	return api
 }
+
+fn (n Notification) str() string {
+	msg := if n.msg != '' {' >> $n.msg'} else {''}
+	urg := if n.urgency != '' {'[$n.urgency] '} else {''}
+	return urg + n.title + msg
+}
+
+pub fn err_msg_to_notification(err_msg string) Notification {
+	urg := err_msg.find_between('[', '] ')
+	title := err_msg.all_after('[$urg] ').all_before(' >> ')
+	msg := err_msg.all_after(' >> ')
+	return Notification{
+		title: title
+		msg: msg
+		urgency: urg
+	}
+}
