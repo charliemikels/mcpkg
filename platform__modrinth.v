@@ -55,16 +55,16 @@ fn (p PlatformModrinth) search_for_mods(search SearchFilter, page PageInfo) ?[]M
 	config.header.add(http.CommonHeader.authorization, p.auth_key)
 
 	responce := http.fetch(config) or {
-		return error( Notification {
+		return error(Notification{
 			title: '${@FN} failed to fetch json'
 			msg: err.msg
-		}.str() )
+		}.str())
 	}
 	responce_decoded := json2.raw_decode(responce.text) or {
-		return error( Notification {
+		return error(Notification{
 			title: '${@FN} failed to decode json'
 			msg: err.msg
-		}.str() )
+		}.str())
 	}
 
 	mut mod_list := []Mod{}
@@ -72,10 +72,10 @@ fn (p PlatformModrinth) search_for_mods(search SearchFilter, page PageInfo) ?[]M
 	for key, val in responce_decoded.as_map() {
 		match key {
 			'error' {
-				return error( Notification {
+				return error(Notification{
 					title: 'Modrinth.${@FN} includes an error.'
 					msg: responce_decoded.as_map().str()
-				}.str() )
+				}.str())
 			}
 			'limit' {} // items per return. 	num_pages := total_hits / limit
 			'offset' {} // cuurent_page := offset / limit
@@ -129,16 +129,16 @@ fn (p PlatformModrinth) get_mod_by_id(mod_id string) ?Mod {
 	config.header.add(http.CommonHeader.authorization, p.auth_key)
 
 	responce := http.fetch(config) or {
-		return error( Notification {
+		return error(Notification{
 			title: '${@FN} failed to fetch json'
 			msg: err.msg
-		}.str() )
+		}.str())
 	}
 	responce_decoded := json2.raw_decode(responce.text) or {
-		return error( Notification {
+		return error(Notification{
 			title: '${@FN} failed to decode json'
 			msg: err.msg
-		}.str() )
+		}.str())
 	}
 
 	mut mod := Mod{
@@ -148,28 +148,44 @@ fn (p PlatformModrinth) get_mod_by_id(mod_id string) ?Mod {
 	for k, v in responce_decoded.as_map() {
 		match k {
 			'error' {
-				return error( Notification {
+				return error(Notification{
 					title: 'Modrinth.${@FN} includes an error.'
 					msg: responce_decoded.as_map().str()
-				}.str() )
+				}.str())
 			}
-			'id' { mod.id = v.str()	}
-			'slug' { mod.slug = v.str() }
+			'id' {
+				mod.id = v.str()
+			}
+			'slug' {
+				mod.slug = v.str()
+			}
 			'team' {} // Team ID. But there's no API request that utalizes team ID
-			'title' { mod.name = v.str() }
-			'description' { mod.description = v.str() }
-			'body' { mod.description_full = v.str() }
+			'title' {
+				mod.name = v.str()
+			}
+			'description' {
+				mod.description = v.str()
+			}
+			'body' {
+				mod.description_full = v.str()
+			}
 			'body_url' {} // Never actualy utilized.
-			'published' { mod.date_created = v.str() }
-			'updated' { mod.date_modified = v.str() }
+			'published' {
+				mod.date_created = v.str()
+			}
+			'updated' {
+				mod.date_modified = v.str()
+			}
 			'status' {} // Approved, pending, ect. Useful for mod authors.
 			'license' {
-				license := v.as_map()['id'] or {continue}.str()
+				license := v.as_map()['id'] or { continue }.str()
 				mod.license = license
 			} // map[string]string | keys: id, name, url
 			'client_side' {}
 			'server_side' {}
-			'downloads' { mod.downloads = v.int() }
+			'downloads' {
+				mod.downloads = v.int()
+			}
 			'followers' {} // int
 			'categories' {} // []string
 			'versions' {
@@ -180,15 +196,33 @@ fn (p PlatformModrinth) get_mod_by_id(mod_id string) ?Mod {
 					is_incomplete: true
 				})
 			}
-			'icon_url' 		{ mod.icon_url = v.str() }
-			'issues_url' 	{ if v.str() != 'null' {mod.links['issues'] = v.str()} }
-			'source_url' 	{ if v.str() != 'null' {mod.links['source'] = v.str()} }
-			'wiki_url' 		{ if v.str() != 'null' {mod.links['wiki'] = v.str()} }
-			'discord_url' { if v.str() != 'null' {mod.links['discord'] = v.str()} }
+			'icon_url' {
+				mod.icon_url = v.str()
+			}
+			'issues_url' {
+				if v.str() != 'null' {
+					mod.links['issues'] = v.str()
+				}
+			}
+			'source_url' {
+				if v.str() != 'null' {
+					mod.links['source'] = v.str()
+				}
+			}
+			'wiki_url' {
+				if v.str() != 'null' {
+					mod.links['wiki'] = v.str()
+				}
+			}
+			'discord_url' {
+				if v.str() != 'null' {
+					mod.links['discord'] = v.str()
+				}
+			}
 			'donation_urls' {
 				for i in v.arr() {
-					donation_platform_name := i.as_map()['platform'] or {continue}.str()
-					donation_platform_url := i.as_map()['url'] or {''}.str()
+					donation_platform_name := i.as_map()['platform'] or { continue }.str()
+					donation_platform_url := i.as_map()['url'] or { '' }.str()
 					mod.links[donation_platform_name] = donation_platform_url
 				}
 			}
@@ -207,16 +241,16 @@ fn (p PlatformModrinth) get_versions_by_mod_id(mod_id string) ?[]ModVersion {
 	config.header.add(http.CommonHeader.authorization, p.auth_key)
 
 	responce := http.fetch(config) or {
-		return error( Notification {
+		return error(Notification{
 			title: '${@FN} failed to fetch json'
 			msg: err.msg
-		}.str() )
+		}.str())
 	}
 	responce_decoded := json2.raw_decode(responce.text) or {
-		return error( Notification {
+		return error(Notification{
 			title: '${@FN} failed to decode json'
 			msg: err.msg
-		}.str() )
+		}.str())
 	}
 
 	parrent_mod := Mod{
@@ -235,22 +269,36 @@ fn (p PlatformModrinth) get_versions_by_mod_id(mod_id string) ?[]ModVersion {
 		for k, v in version.as_map() {
 			match k {
 				'error' {
-					return error( Notification {
+					return error(Notification{
 						title: 'Modrinth.${@FN} includes an error.'
 						msg: responce_decoded.as_map().str()
-					}.str() )
+					}.str())
 				}
-				'id' { mod_version.id = v.str() }
+				'id' {
+					mod_version.id = v.str()
+				}
 				'mod_id' {} // Parrent mod handled in init statement
 				'author_id' {} // currently: author stored w/ Mod
 				'featured' {}
-				'name' { mod_version.name = v.str() }
-				'version_number' { mod_version.number = v.str() }
-				'changelog' { mod_version.changelog = v.str() }
+				'name' {
+					mod_version.name = v.str()
+				}
+				'version_number' {
+					mod_version.number = v.str()
+				}
+				'changelog' {
+					mod_version.changelog = v.str()
+				}
 				'changelog_url' {} // like body_url, this isn't used anymore
-				'date_published' { mod_version.date_published = v.str() } // 2021-03-07T00:22:03.038655Z
-				'downloads' { mod_version.downloads = v.int() }
-				'version_type' { mod_version.version_type = v.str() }
+				'date_published' {
+					mod_version.date_published = v.str()
+				} // 2021-03-07T00:22:03.038655Z
+				'downloads' {
+					mod_version.downloads = v.int()
+				}
+				'version_type' {
+					mod_version.version_type = v.str()
+				}
 				'files' {
 					mut files := []ModVersionFile{}
 					for f in v.arr() {
@@ -264,8 +312,12 @@ fn (p PlatformModrinth) get_versions_by_mod_id(mod_id string) ?[]ModVersion {
 									}
 									file.hashes = hashes.move()
 								}
-								'url' { file.url = fv.str() }
-								'filename' { file.filename = fv.str() }
+								'url' {
+									file.url = fv.str()
+								}
+								'filename' {
+									file.filename = fv.str()
+								}
 								'primary' {}
 								else {}
 							}
@@ -274,9 +326,15 @@ fn (p PlatformModrinth) get_versions_by_mod_id(mod_id string) ?[]ModVersion {
 					}
 					mod_version.files = files
 				}
-				'dependencies' { mod_version.dependencies = v.arr().map(Mod{ id: it.str(), platform: &p }) }
-				'game_versions' { mod_version.game_versions = v.arr().map(it.str()) }
-				'loaders' { mod_version.loaders = v.arr().map(it.str()) }
+				'dependencies' {
+					mod_version.dependencies = v.arr().map(Mod{ id: it.str(), platform: &p })
+				}
+				'game_versions' {
+					mod_version.game_versions = v.arr().map(it.str())
+				}
+				'loaders' {
+					mod_version.loaders = v.arr().map(it.str())
+				}
 				else {}
 			}
 		}

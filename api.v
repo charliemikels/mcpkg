@@ -9,12 +9,12 @@ mut:
 	mc_mods_dir       string
 	mcpkg_storage_dir string
 	auth_keys_path    string
-	config_path   		string
-	mod_platforms 		map[string]ModPlatform
-	auth_keys     		map[string]string
+	config_path       string
+	mod_platforms     map[string]ModPlatform
+	auth_keys         map[string]string
 	// current_branch Branch
 	// branches []Branch
-	notifications			[]Notification
+	notifications []Notification
 }
 
 struct Notification {
@@ -24,7 +24,7 @@ struct Notification {
 }
 
 pub fn (a Api) to_json() string {
-	mut obj := map[string]json2.Any
+	mut obj := map[string]json2.Any{}
 	obj['mc_root_dir'] = a.mc_root_dir
 	obj['mc_mods_dir'] = a.mc_mods_dir
 	obj['mcpkg_storage_dir'] = a.mcpkg_storage_dir
@@ -36,10 +36,10 @@ pub fn (mut a Api) from_json(f json2.Any) {
 	obj := f.as_map()
 	for k, v in obj {
 		match k {
-			'mc_root_dir' {a.mc_root_dir = v.str()}
-			'mc_mods_dir' {a.mc_mods_dir = v.str()}
-			'mcpkg_storage_dir' {a.mcpkg_storage_dir = v.str()}
-			'auth_keys_path' {a.auth_keys_path = v.str()}
+			'mc_root_dir' { a.mc_root_dir = v.str() }
+			'mc_mods_dir' { a.mc_mods_dir = v.str() }
+			'mcpkg_storage_dir' { a.mcpkg_storage_dir = v.str() }
+			'auth_keys_path' { a.auth_keys_path = v.str() }
 			else {}
 		}
 	}
@@ -87,7 +87,7 @@ pub fn load_api(path string) Api {
 			api.auth_keys[k] = v.str()
 		}
 	} else if api.auth_keys_path != '' {
-		panic( 'Path to auth file was given, but no file exists at $api.auth_keys_path' )
+		panic('Path to auth file was given, but no file exists at $api.auth_keys_path')
 	}
 
 	// branches
@@ -101,8 +101,8 @@ pub fn load_api(path string) Api {
 }
 
 fn (n Notification) str() string {
-	msg := if n.msg != '' {' >> $n.msg'} else {''}
-	urg := if n.urgency != '' {'[$n.urgency] '} else {''}
+	msg := if n.msg != '' { ' >> $n.msg' } else { '' }
+	urg := if n.urgency != '' { '[$n.urgency] ' } else { '' }
 	return urg + n.title + msg
 }
 

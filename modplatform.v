@@ -10,8 +10,8 @@ fn (mut a Api) load_mod_platforms() map[string]ModPlatform {
 	mut platform_map := map[string]ModPlatform{}
 	for p in platforms {
 		if p.requires_authentication && a.auth_keys[p.name] == '' {
-			a.notifications << Notification{	// since API is already mutable, we can directly insert a notification here.
-				title: 'Platform $p.name requires authentication.',
+			a.notifications << Notification{ // since API is already mutable, we can directly insert a notification here.
+				title: 'Platform $p.name requires authentication.'
 				msg: 'No authentication key was found for $p.name in ${a.auth_keys_path}. $p.name will be skipped.'
 			}
 			continue
@@ -28,7 +28,6 @@ interface ModPlatform {
 	name string
 	home_url string
 	requires_authentication bool
-	// TODO: Set all these methods to also return []Notification, rather than fenagaling the `return error()` system.
 	search_for_mods(search SearchFilter, page PageInfo) ?[]Mod
 	get_mod_by_id(mod_id string) ?Mod
 	get_versions_by_mod_id(mod_id string) ?[]ModVersion
@@ -57,8 +56,8 @@ pub fn (mut a Api) search_for_mods(s SearchFilter) []Mod {
 	if s.platform_name != '' {
 		mut p := a.mod_platforms[s.platform_name] or {
 			a.notifications << Notification{
-				title: 'No platform $s.platform_name',
-				msg: 'No known platform with key `$s.platform_name`. Known keys: $a.mod_platforms.keys()',
+				title: 'No platform $s.platform_name'
+				msg: 'No known platform with key `$s.platform_name`. Known keys: $a.mod_platforms.keys()'
 			}
 			return []Mod{}
 		}
@@ -66,7 +65,6 @@ pub fn (mut a Api) search_for_mods(s SearchFilter) []Mod {
 			a.notifications << err_msg_to_notification(err.msg)
 			return []Mod{}
 		}
-
 	} else {
 		mut mod_list := []Mod{}
 		for _, p in a.mod_platforms {
