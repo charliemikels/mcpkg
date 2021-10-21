@@ -62,6 +62,7 @@ pub fn load_api(path string) Api {
 		api = json2.decode<Api>(api_str) or {
 			panic('Failed to decode json at `${os.real_path(path)}`.\n$err')
 		}
+		api.config_path = path
 	} else {
 		// No config given, create default json info
 		os_default_mc_dir := match os.user_os() {
@@ -71,10 +72,24 @@ pub fn load_api(path string) Api {
 			else { os.join_path(os.home_dir(), '.minecraft') }
 		}
 
-		api.mc_root_dir = os_default_mc_dir
-		api.mc_mods_dir = os.join_path(os_default_mc_dir, 'mods')
-		api.mcpkg_storage_dir = os.join_path(os_default_mc_dir, 'mcpkg')
-		api.auth_keys_path = os.join_path(os_default_mc_dir, 'mcpkg', 'auth_keys.json')
+		api.config_path = os.join_path(os_default_mc_dir, 'mcpkg', 'config.json')
+		if !os.exists(api.config_path) {
+			eprintln('Creating new config file at $api.config_path')
+
+			api.mc_root_dir = os_default_mc_dir
+			api.mc_mods_dir = os.join_path(os_default_mc_dir, 'mods')
+			api.mcpkg_storage_dir = os.join_path(os_default_mc_dir, 'mcpkg')
+			api.auth_keys_path = os.join_path(os_default_mc_dir, 'mcpkg', 'auth_keys.json')
+
+			api_string := json2.encode<Api>(api)
+			if !os.exists(api.mcpkg_storage_dir) {
+				os.mkdir_all(api.mcpkg_storage_dir) or {panic(err)}
+			}
+			mut api_file := os.create(api.config_path) or {panic('Could not create new config file at $api.config_path \n'+err.msg)}
+			api_file.write_string(api_string) or {panic('Could not write to new config file at $api.config_path \n'+err.msg)}
+		} else {
+			return load_api(api.config_path)	// split this call into a from_file function?
+		}
 	}
 
 	// Generated data:
@@ -87,7 +102,7 @@ pub fn load_api(path string) Api {
 			api.auth_keys[k] = v.str()
 		}
 	} else if api.auth_keys_path != '' {
-		panic('Path to auth file was given, but no file exists at $api.auth_keys_path')
+		eprintln('Path to auth file was given, but no file exists at $api.auth_keys_path')
 	}
 
 	// branches
