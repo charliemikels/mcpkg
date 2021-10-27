@@ -6,7 +6,7 @@ import x.json2
 struct PlatformModrinth {
 	name                    string = 'modrinth'
 	home_url                string = 'https://modrinth.com/'
-	requires_authentication bool   = true
+	requires_authentication bool // = true
 	auth_key                string
 }
 
