@@ -2,7 +2,7 @@ module mcpkg
 
 // load_mod_platforms runs ModPlatform constructors and converts them into a map.
 // This is ran by load_api()
-fn (mut a Api) load_mod_platforms() map[string]ModPlatform {
+fn (mut a Api) load_mod_platforms() {
 	mut platforms := []ModPlatform{}
 	// vv new platforms here vv
 	platforms << a.new_platform_modrinth()
@@ -16,10 +16,9 @@ fn (mut a Api) load_mod_platforms() map[string]ModPlatform {
 			}
 			continue
 		}
-
 		platform_map[p.name] = p
 	}
-	return platform_map
+	a.mod_platforms = platform_map.move()
 }
 
 const page_size_const = 10
