@@ -23,6 +23,7 @@ struct Notification {
 	urgency string = 'low' // "low", "med", "high"
 }
 
+// for use with json2.encode
 pub fn (a Api) to_json() string {
 	mut obj := map[string]json2.Any{}
 	obj['mc_root_dir'] = a.mc_root_dir
@@ -32,6 +33,7 @@ pub fn (a Api) to_json() string {
 	return obj.str()
 }
 
+// for use with json2.decode
 pub fn (mut a Api) from_json(f json2.Any) {
 	obj := f.as_map()
 	for k, v in obj {
@@ -45,74 +47,86 @@ pub fn (mut a Api) from_json(f json2.Any) {
 	}
 }
 
-// load_api loads a configfile into an Api, or returns a default.
-pub fn load_api(path string) Api {
-	mut api := Api{}
-	if path == 'tmp' {
-		fake_mc_root := os.join_path(os.temp_dir(), 'mcpkg_fake_mc_root')
-		api.mc_root_dir = fake_mc_root
-		api.mc_mods_dir = os.join_path(fake_mc_root, 'mods')
-		api.mcpkg_storage_dir = os.join_path(fake_mc_root, 'mcpkg')
-		api.auth_keys_path = os.join_path(fake_mc_root, 'mcpkg', 'auth_keys.json')
-	} else if path != '' {
-		println('Loading config file at `${os.real_path(path)}`...')
-		api_str := os.read_file(os.real_path(path)) or {
-			panic('Failed to read a file at `${os.real_path(path)}`.\n$err')
-		}
-		api = json2.decode<Api>(api_str) or {
-			panic('Failed to decode json at `${os.real_path(path)}`.\n$err')
-		}
-		api.config_path = path
-	} else {
-		// No config given, create default json info
-		os_default_mc_dir := match os.user_os() {
-			'windows' { os.join_path('%appdata%', '.minecraft') } // QUESTION: Might not work? intended for win+R shortcut.
-			'macos' { os.join_path(os.home_dir(), 'Library', 'Application Support', 'minecraft') }
-			'linux' { os.join_path(os.home_dir(), '.minecraft') }
-			else { os.join_path(os.home_dir(), '.minecraft') }
-		}
+// new_api returns a default Api struct. These can be over written by load_config_file and initilize.
+pub fn new_api() Api {
+	os_default_mc_dir := match os.user_os() {
+		'windows' { os.join_path('%appdata%', '.minecraft') } // QUESTION: Might not work? intended for win+R shortcut.
+		'macos' { os.join_path(os.home_dir(), 'Library', 'Application Support', 'minecraft') }
+		'linux' { os.join_path(os.home_dir(), '.minecraft') }
+		else { os.join_path(os.home_dir(), '.minecraft') }
+ 	}
 
-		api.config_path = os.join_path(os_default_mc_dir, 'mcpkg', 'config.json')
-		if !os.exists(api.config_path) {
-			eprintln('Creating new config file at $api.config_path')
+	return Api{
+		mc_root_dir: os_default_mc_dir
+		mc_mods_dir: os.join_path(os_default_mc_dir, 'mods')
+		mcpkg_storage_dir: os.join_path(os_default_mc_dir, 'mcpkg')
+		auth_keys_path: os.join_path(os_default_mc_dir, 'mcpkg', 'auth_keys.json')
+	}
+}
 
-			api.mc_root_dir = os_default_mc_dir
-			api.mc_mods_dir = os.join_path(os_default_mc_dir, 'mods')
-			api.mcpkg_storage_dir = os.join_path(os_default_mc_dir, 'mcpkg')
-			api.auth_keys_path = os.join_path(os_default_mc_dir, 'mcpkg', 'auth_keys.json')
-
-			api_string := json2.encode<Api>(api)
-			if !os.exists(api.mcpkg_storage_dir) {
-				os.mkdir_all(api.mcpkg_storage_dir) or {panic(err)}
-			}
-			mut api_file := os.create(api.config_path) or {panic('Could not create new config file at $api.config_path \n'+err.msg)}
-			api_file.write_string(api_string) or {panic('Could not write to new config file at $api.config_path \n'+err.msg)}
-		} else {
-			return load_api(api.config_path)	// split this call into a from_file function?
+// load_config_file modifies an api based on a config.json file at `path`
+pub fn (mut a Api) load_config_file(path string) {
+	println('Loading config file at `${os.real_path(path)}`...')
+	api_str := os.read_file(os.real_path(path)) or {
+		// TODO: a.notifications << Notificaton{...} is really large. Make a.new_notification(title, msg)
+		// TODO: rename "Notification" to "alert"? much shorter this way...
+		a.notifications << Notification{
+			title:'${@FN} failed to read a file at `${os.real_path(path)}`.'
+			msg: err.msg
+		}
+		return
+	}
+	api_decoded := json2.raw_decode(api_str) or {
+		a.notifications << Notification{
+			title:'${@FN} failed to decode json at `${os.real_path(path)}`.'
+			msg: err.msg
+		}
+		return
+	}
+	a.config_path = path
+	for k, v in api_decoded.as_map(){
+		match k.str() {
+			'mc_root_dir' {a.mc_root_dir = v.str()}
+			'mc_mods_dir' {a.mc_mods_dir = v.str()}
+			'mcpkg_storage_dir' {a.mcpkg_storage_dir = v.str()}
+			'auth_keys_path' {a.auth_keys_path = v.str()}
+			else {}
 		}
 	}
+}
 
-	// Generated data:
+// save_config_file writes the current api to a file at `path`. If path is `''`, use api.config_path.
+pub fn (mut a Api) save_config_file(path string) {
+	mut p := if path != '' {path} else {
+		if os.is_dir(a.config_path) { os.join_path(a.config_path, 'config.json') }
+		else {a.config_path}
+	}
+	println('Writing config file to `$p`')
+	panic('TODO: api.save_config_file() is not implemented yet!!!')
+}
 
-	// auth_keys
-	if os.exists(os.real_path(api.auth_keys_path)) {
-		auth_keys_json := os.read_file(os.real_path(api.auth_keys_path)) or { panic(err) }
+// initialize populates the rest of the api using the basic source paths
+pub fn (mut a Api) initialize() {
+	// Test dir validity
+
+	//
+	a.load_auth_keys()
+	a.load_mod_platforms()
+	// Branches
+	// Current mods
+}
+
+fn (mut a Api) load_auth_keys() {
+	// TODO: update to notifications
+	if os.exists(os.real_path(a.auth_keys_path)) {
+		auth_keys_json := os.read_file(os.real_path(a.auth_keys_path)) or { panic(err) }
 		auth_keys_decoded := json2.raw_decode(auth_keys_json) or { panic(err) }
 		for k, v in auth_keys_decoded.as_map() {
-			api.auth_keys[k] = v.str()
+			a.auth_keys[k] = v.str()
 		}
-	} else if api.auth_keys_path != '' {
-		eprintln('Path to auth file was given, but no file exists at $api.auth_keys_path')
+	} else if a.auth_keys_path != '' {
+		eprintln('Path to auth file was given, but no file exists at $a.auth_keys_path')
 	}
-
-	// branches
-	// installed mods
-	// etc...
-
-	api.mod_platforms = api.load_mod_platforms()
-
-	// println(api)
-	return api
 }
 
 fn (n Notification) str() string {
