@@ -54,7 +54,7 @@ pub fn new_api() Api {
 		'macos' { os.join_path(os.home_dir(), 'Library', 'Application Support', 'minecraft') }
 		'linux' { os.join_path(os.home_dir(), '.minecraft') }
 		else { os.join_path(os.home_dir(), '.minecraft') }
- 	}
+	}
 
 	return Api{
 		mc_root_dir: os_default_mc_dir
@@ -71,25 +71,25 @@ pub fn (mut a Api) load_config_file(path string) {
 		// TODO: a.notifications << Notificaton{...} is really large. Make a.new_notification(title, msg)
 		// TODO: rename "Notification" to "alert"? much shorter this way...
 		a.notifications << Notification{
-			title:'${@FN} failed to read a file at `${os.real_path(path)}`.'
+			title: '${@FN} failed to read a file at `${os.real_path(path)}`.'
 			msg: err.msg
 		}
 		return
 	}
 	api_decoded := json2.raw_decode(api_str) or {
 		a.notifications << Notification{
-			title:'${@FN} failed to decode json at `${os.real_path(path)}`.'
+			title: '${@FN} failed to decode json at `${os.real_path(path)}`.'
 			msg: err.msg
 		}
 		return
 	}
 	a.config_path = path
-	for k, v in api_decoded.as_map(){
+	for k, v in api_decoded.as_map() {
 		match k.str() {
-			'mc_root_dir' {a.mc_root_dir = v.str()}
-			'mc_mods_dir' {a.mc_mods_dir = v.str()}
-			'mcpkg_storage_dir' {a.mcpkg_storage_dir = v.str()}
-			'auth_keys_path' {a.auth_keys_path = v.str()}
+			'mc_root_dir' { a.mc_root_dir = v.str() }
+			'mc_mods_dir' { a.mc_mods_dir = v.str() }
+			'mcpkg_storage_dir' { a.mcpkg_storage_dir = v.str() }
+			'auth_keys_path' { a.auth_keys_path = v.str() }
 			else {}
 		}
 	}
@@ -97,9 +97,14 @@ pub fn (mut a Api) load_config_file(path string) {
 
 // save_config_file writes the current api to a file at `path`. If path is `''`, use api.config_path.
 pub fn (mut a Api) save_config_file(path string) {
-	mut p := if path != '' {path} else {
-		if os.is_dir(a.config_path) { os.join_path(a.config_path, 'config.json') }
-		else {a.config_path}
+	mut p := if path != '' {
+		path
+	} else {
+		if os.is_dir(a.config_path) {
+			os.join_path(a.config_path, 'config.json')
+		} else {
+			a.config_path
+		}
 	}
 	println('Writing config file to `$p`')
 	panic('TODO: api.save_config_file() is not implemented yet!!!')
