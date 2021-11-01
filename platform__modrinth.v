@@ -342,3 +342,110 @@ fn (p PlatformModrinth) get_versions_by_mod_id(mod_id string) ?[]ModVersion {
 	}
 	return mod_versions
 }
+
+// get_version_by_id: wrapper for GET 'https://api.modrinth.com/v2/version/$version_id'
+fn (p PlatformModrinth) get_version_by_id(version_id string) ?ModVersion {
+	mut config := http.FetchConfig{
+		url: 'https://api.modrinth.com/api/v1/mod/version/$version_id'
+	}
+	config.header.add(http.CommonHeader.authorization, p.auth_key)
+
+	responce := http.fetch(config) or {
+		return error(Notification{
+			title: '${@FN} failed to fetch json'
+			msg: err.msg
+		}.str())
+	}
+	responce_decoded := json2.raw_decode(responce.text) or {
+		return error(Notification{
+			title: '${@FN} failed to decode json'
+			msg: err.msg
+		}.str())
+	}
+
+	mut version := ModVersion{
+		is_incomplete: false
+		platform: &p
+		id: version_id
+	}
+	for k, v in responce_decoded.as_map() {
+		match k {
+			'error' {
+				return error(Notification{
+					title: 'Modrinth.${@FN} includes an error.'
+					msg: responce_decoded.as_map().str()
+				}.str())
+			}
+			'name' {
+				version.name = v.str()
+			}
+			'version_number' {
+				version.number = v.str()
+			}
+			'changelog' {
+				version.changelog = v.str()
+			}
+			'changelog_url' {}
+			'dependencies' {
+				version.dependencies << Mod{
+					id: v.str()
+					platform: &p
+				}
+			}
+			'game_versions' {
+				version.game_versions << v.str()
+			}
+			'version_type' {
+				version.version_type = v.str()
+			}
+			'loaders' {
+				version.loaders << v.str()
+			}
+			'id' {
+				version.id = v.str()
+			}
+			// 'project_id'		{}	// upgrade from mod_id in the future
+			'mod_id' {
+				version.mod = Mod{
+					id: v.str()
+					platform: &p
+				}
+			}
+			'date_published' {
+				version.date_published = v.str()
+			}
+			'downloads' {
+				version.downloads = v.int()
+			}
+			'files' {
+				mut files := []ModVersionFile{}
+				for f in v.arr() {
+					mut file := ModVersionFile{}
+					for fk, fv in f.as_map() {
+						match fk {
+							'hashes' {
+								mut hashes := map[string]string{}
+								for hk, hv in fv.as_map() {
+									hashes[hk] = hv.str()
+								}
+								file.hashes = hashes.move()
+							}
+							'url' {
+								file.url = fv.str()
+							}
+							'filename' {
+								file.filename = fv.str()
+							}
+							'primary' {}
+							else {}
+						}
+					}
+					files << file
+				}
+				version.files = files
+			}
+			else {}
+		}
+	}
+	return version
+}

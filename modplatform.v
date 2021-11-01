@@ -30,6 +30,7 @@ interface ModPlatform {
 	search_for_mods(search SearchFilter, page PageInfo) ?[]Mod
 	get_mod_by_id(mod_id string) ?Mod
 	get_versions_by_mod_id(mod_id string) ?[]ModVersion
+	get_version_by_id(version_id string) ?ModVersion
 }
 
 pub struct SearchFilter {
@@ -84,9 +85,12 @@ pub fn (mut a Api) get_full_mod(mod Mod) Mod {
 	}
 }
 
-// pub fn (a Api) get_full_version(ver ModVersion) ModVersion {
-// 	return mod.platform.get_version_by_id(ModVersion.id)
-// }
+pub fn (mut a Api) get_full_version(ver ModVersion) ModVersion {
+	return ver.platform.get_version_by_id(ver.id) or {
+		a.notifications << err_msg_to_notification(err.msg)
+		return ver
+	}
+}
 
 pub fn (mut a Api) get_mod_versions(mod Mod) []ModVersion {
 	return mod.platform.get_versions_by_mod_id(mod.id) or {
