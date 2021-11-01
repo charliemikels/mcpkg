@@ -1,7 +1,10 @@
 module mcpkg
 
+import net.http
+import os
+
 struct Mod {
-mut:
+pub mut:
 	is_incomplete bool = true
 	name          string
 	slug          string
@@ -56,4 +59,12 @@ mut:
 	url      string
 	filename string
 	// primary  bool
+}
+
+pub fn (a Api) download_mod_version(mod_version ModVersion) {
+	for file in mod_version.files {
+		path := os.join_path(os.temp_dir(), file.filename)
+		http.download_file(file.url, path) or { panic(err) }
+		println('downloaded $file.filename')
+	}
 }
