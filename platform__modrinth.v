@@ -17,6 +17,13 @@ fn (a Api) new_platform_modrinth() ModPlatform {
 	return ModPlatform(modrinth)
 }
 
+// Helpers:
+// fn (p PlatformModrinth) mod_json_to_mcpkg_mod(j Json2.Any) Mod {}
+// fn (p PlatformModrinth) version_json_to_mcpkg_version(j Json2.Any) ModVersion {}
+// fn (p PlatformModrinth) version_file_json_to_mcpkg_version_file(j Json2.Any) ModVersionFile {}
+
+// interface:
+
 // search_for_mods: wrapper for GET https://api.modrinth.com/v2/search
 // See also: https://docs.modrinth.com/api-spec/#operation/searchProjects
 fn (p PlatformModrinth) search_for_mods(search SearchFilter, page PageInfo) ?[]Mod {

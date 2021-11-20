@@ -12,16 +12,24 @@ mut:
 	config_path       string
 	mod_platforms     map[string]ModPlatform
 	auth_keys         map[string]string
-	// current_branch Branch
-	// branches []Branch
-	notifications []Notification
+	current_branch_id int
+	branches          map[int]Branch
+	game_versions			[]GameVersion
+	notifications     []Notification
 }
 
 struct Notification {
 	title   string
 	msg     string
 	urgency string = 'low' // "low", "med", "high"
+	// actions []Action
 }
+
+// struct Action {
+// 	title string
+// 	description string
+// 	function fn()
+// }
 
 // for use with json2.encode
 pub fn (a Api) to_json() string {
@@ -113,12 +121,11 @@ pub fn (mut a Api) save_config_file(path string) {
 // initialize populates the rest of the api using the basic source paths
 pub fn (mut a Api) initialize() {
 	// Test dir validity
-
-	//
 	a.load_auth_keys()
 	a.load_mod_platforms()
-	// Branches
+	// a.load_branches() // DEBUG: un comment soon
 	// Current mods
+	// Don't initilize []game_versions. see api.get_game_versions()
 }
 
 fn (mut a Api) load_auth_keys() {
@@ -132,6 +139,13 @@ fn (mut a Api) load_auth_keys() {
 	} else if a.auth_keys_path != '' {
 		eprintln('Path to auth file was given, but no file exists at $a.auth_keys_path')
 	}
+}
+
+pub fn (mut a Api) get_game_versions() []GameVersion {
+	if a.game_versions == [] {
+		a.game_versions << a.get_remote_game_versions()
+	}
+	return a.game_versions
 }
 
 fn (n Notification) str() string {
@@ -150,3 +164,16 @@ pub fn err_msg_to_notification(err_msg string) Notification {
 		urgency: urg
 	}
 }
+
+// Shorthand to generate new alerts rather than the full Notification {.. .. ..} syntax
+fn new_alert(level string, title string, msg string) Notification {
+	// level = quiet/log, notif(ication)/alert, warn/error
+	return Notification{
+		title: title
+		msg: msg
+		urgency: level
+	}
+}
+
+// fn new_alert_from_string
+// fn alert_to_string
