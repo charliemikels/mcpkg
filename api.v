@@ -123,7 +123,7 @@ pub fn (mut a Api) initialize() {
 	// Test dir validity
 	a.load_auth_keys()
 	a.load_mod_platforms()
-	// a.load_branches() // DEBUG: un comment soon
+	a.load_branches()
 	// Current mods
 	// Don't initilize []game_versions. see api.get_game_versions()
 }
