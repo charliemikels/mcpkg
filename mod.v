@@ -3,6 +3,7 @@ module mcpkg
 import x.json2
 import net.http
 import os
+import json
 
 struct Mod {
 pub mut:
@@ -76,15 +77,28 @@ fn (mut a Api) json_to_mod(json json2.Any) Mod {
 	mut mod := Mod{}
 	for k, v in json.as_map() {
 		match k {
-			'platform'	{ mod.platform = a.mod_platforms[v.str()] or {
-				a.notifications << new_alert('high', 'Error loading Mod from json: No known platform `${v.str()}`', '`${v.str()}` is not in the list of known platforms: ${a.mod_platforms}')
-				continue
-				}}
-			'id' 				{ mod.id = v.str() }
-			'name' 			{ mod.name = v.str() }
-			'slug'			{ mod.slug = v.str() }
-			'page_url'	{ mod.page_url = v.str() }
-			'icon_url'	{ mod.icon_url = v.str() }
+			'platform' {
+				mod.platform = a.mod_platforms[v.str()] or {
+					a.notifications << new_alert('high', 'Error loading Mod from json: No known platform `$v.str()`',
+						'`$v.str()` is not in the list of known platforms: $a.mod_platforms')
+					continue
+				}
+			}
+			'id' {
+				mod.id = v.str()
+			}
+			'name' {
+				mod.name = v.str()
+			}
+			'slug' {
+				mod.slug = v.str()
+			}
+			'page_url' {
+				mod.page_url = v.str()
+			}
+			'icon_url' {
+				mod.icon_url = v.str()
+			}
 			// the rest can be built from a.get_full_mod()
 			else {}
 		}
@@ -96,11 +110,11 @@ fn (a Api) json_to_mod_version(json json2.Any) ModVersion {
 	mut ver := ModVersion{}
 	for k, v in json.as_map() {
 		match k {
-			'platform'	{ ver.platform = a.mod_platforms[v.str()] }
-			'id' 				{ ver.id = v.str() }
-			'name' 			{ ver.name = v.str() }
-			'number'		{ ver.number = v.str() }
-			'files'			{ ver.files = v.arr().map( a.json_to_mod_version_file(it) ) }
+			'platform' { ver.platform = a.mod_platforms[v.str()] }
+			'id' { ver.id = v.str() }
+			'name' { ver.name = v.str() }
+			'number' { ver.number = v.str() }
+			'files' { ver.files = v.arr().map(a.json_to_mod_version_file(it)) }
 			// the rest can be built from a.get_full_version()
 			else {}
 		}
@@ -112,7 +126,7 @@ fn (a Api) json_to_mod_version_file(json json2.Any) ModVersionFile {
 	mut vf := ModVersionFile{}
 	for k, v in json.as_map() {
 		match k {
-			'filename' {vf.filename = v.str() }
+			'filename' { vf.filename = v.str() }
 			// the rest can be built from a.get_full_version()
 			else {}
 		}

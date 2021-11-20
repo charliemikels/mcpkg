@@ -29,7 +29,7 @@ fn (mut a Api) get_remote_game_versions() []GameVersion {
 		url: 'https://api.modrinth.com/api/v1/tag/game_version'
 	}
 	responce := http.fetch(config) or {
-		a.notifications << new_alert('high','HTTP fetch failed','Could not connect to `$config.url`.')
+		a.notifications << new_alert('high', 'HTTP fetch failed', 'Could not connect to `$config.url`.')
 		return []
 	}
 	// responce is a json array.
@@ -40,17 +40,24 @@ fn (mut a Api) get_remote_game_versions() []GameVersion {
 		version_list << GameVersion{
 			index: i
 			name: v
-			kind:  if is_release(v) { 'release' }
-				else if v.contains('w') || v.to_lower().contains('pre') || v.contains('rc') { 'snapshot' }
-				else if v[0] == `b` { 'beta' }
-				else if v[0] == `a` { 'alpha' }
-				else if v[0] == `i` { 'infdev' }
-				else if v[0] == `c` { 'c' }
-				else if v[0] == `r` { 'rd' }
-				else {
-					a.notifications << new_alert('low', 'Version type parser failed', 'Could not parse the version type of version `$v` (#$i).')
-					'other'
-				}
+			kind: if is_release(v) {
+				'release'
+			} else if v.contains('w') || v.to_lower().contains('pre') || v.contains('rc') {
+				'snapshot'
+			} else if v[0] == `b` {
+				'beta'
+			} else if v[0] == `a` {
+				'alpha'
+			} else if v[0] == `i` {
+				'infdev'
+			} else if v[0] == `c` {
+				'c'
+			} else if v[0] == `r` {
+				'rd'
+			} else {
+				a.notifications << new_alert('low', 'Version type parser failed', 'Could not parse the version type of version `$v` (#$i).')
+				'other'
+			}
 		}
 	}
 

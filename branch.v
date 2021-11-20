@@ -2,10 +2,11 @@ module mcpkg
 
 import os
 import x.json2
+import json
 
 struct Branch {
 mut:
-	id					 int
+	id           int
 	name         string
 	game_version string
 	// mods []Mod
@@ -29,15 +30,16 @@ const branches_file_name = 'branches.json'
 
 struct BranchConfig {
 	game_version string [required]
-	name string
+	name         string
 	make_current bool
 }
 
 fn (mut a Api) next_branch_id() int {
 	mut counter := 0
 	for {
-		if counter in a.branches.keys() { counter++ }
-		else {
+		if counter in a.branches.keys() {
+			counter++
+		} else {
 			return counter
 		}
 	}
@@ -45,10 +47,10 @@ fn (mut a Api) next_branch_id() int {
 }
 
 pub fn (mut a Api) new_branch(c BranchConfig) Branch {
-	b := Branch {
+	b := Branch{
 		id: a.next_branch_id()
 		game_version: c.game_version
-		name: if c.name == '' {c.game_version} else {c.name}
+		name: if c.name == '' { c.game_version } else { c.name }
 	}
 
 	a.branches[b.id] = b
@@ -72,7 +74,7 @@ fn (mut a Api) json_to_branch(json json2.Any) Branch {
 	mut branch := Branch{}
 	for k, v in json.as_map() {
 		match k {
-			'id'	 { branch.id = v.int() }
+			'id' { branch.id = v.int() }
 			'name' { branch.name = v.str() }
 			'game_version' { branch.game_version = v.str() }
 			'installed_versions' { branch.installed_versions = v.arr().map(a.json_to_mod_version(it)) }
@@ -92,7 +94,8 @@ pub fn (mut a Api) load_branches() {
 		return
 	}
 	branches_json := json2.raw_decode(branches_str) or {
-		a.notifications << new_alert('high', 'Failed to parse branch.json into json', err.msg)
+		a.notifications << new_alert('high', 'Failed to parse branch.json into json',
+			err.msg)
 		return
 	}
 
@@ -100,7 +103,9 @@ pub fn (mut a Api) load_branches() {
 	mut branches := []Branch{}
 	for k, v in branches_json.as_map() {
 		match k {
-			'current_branch' { current_branch_id = v.int() }
+			'current_branch' {
+				current_branch_id = v.int()
+			}
 			'branches' {
 				for b in v.arr() {
 					branches << a.json_to_branch(b)
@@ -116,12 +121,10 @@ pub fn (mut a Api) load_branches() {
 		a.branches[b.id] = b
 	}
 
-
 	if current_branch_id !in a.branches.keys() {
 		panic('the given current_branch_id ($current_branch_id) was not found in the map of branches.')
 		// TODO: convert to notification, and create a system to handle this err
-	}
-	else {
+	} else {
 		a.current_branch_id = current_branch_id
 	}
 }

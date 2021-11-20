@@ -14,7 +14,7 @@ mut:
 	auth_keys         map[string]string
 	current_branch_id int
 	branches          map[int]Branch
-	game_versions			[]GameVersion
+	game_versions     []GameVersion
 	notifications     []Notification
 }
 
