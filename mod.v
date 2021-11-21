@@ -10,7 +10,7 @@ pub mut:
 	is_incomplete bool = true
 	name          string
 	slug          string
-	platform      ModPlatform
+	platform      ModPlatform = ModPlatform(PlatformDummy{})
 	id            string
 	// platform_string string [json: platform]	// generate on load w/ json2
 	author        string
@@ -38,7 +38,7 @@ pub mut:
 struct ModVersion {
 mut:
 	is_incomplete  bool = true
-	platform       ModPlatform
+	platform       ModPlatform = ModPlatform(PlatformDummy{})
 	id             string
 	mod            Mod
 	name           string
