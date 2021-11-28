@@ -124,7 +124,8 @@ pub fn (mut a Api) initialize() {
 	a.load_auth_keys()
 	a.load_mod_platforms()
 	a.load_branches()
-	// Current mods
+	// TODO: check un-tracked filenames in minecraft/mods/ (add to branch?)
+
 	// Don't initilize []game_versions. see api.get_game_versions()
 }
 

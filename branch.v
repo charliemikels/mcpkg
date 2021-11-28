@@ -3,6 +3,7 @@ module mcpkg
 import os
 import x.json2
 import json
+import net.http
 
 struct Branch {
 mut:
@@ -27,10 +28,12 @@ mut:
 
 const branches_file_name = 'branches.json'
 
+const mod_cache_dir_name = 'mod_cache'
+
 pub struct BranchConfig {
 	game_version string [required]
 	name         string
-	make_current bool = false
+	make_current bool
 }
 
 pub fn (mut a Api) new_branch(c BranchConfig) Branch {
@@ -66,7 +69,7 @@ fn (b Branch) to_json() json2.Any {
 	json_map['id'] = b.id
 	json_map['name'] = b.name
 	json_map['game_version'] = b.game_version
-	// json_map['installed_versions'] = b.installed_versions.map(it.to_json()) (TODO: Implement, and make output json2.Any to avoid string as strings issues.)
+	json_map['installed_versions'] = b.installed_versions.map(it.to_json())
 	// json_map['upgrade_backlog']    = b.upgrade_backlog.map(it.to_json())
 	return json_map
 }
@@ -173,3 +176,97 @@ pub fn (a Api) save_branches() {
 
 // a.clean_mod_cache() // Search every branch. if a mod in cache isn't needed by any branch, remove it.
 // a.wipe_mod_cache()  // Delete contents of mod_cache
+
+fn (mut a Api) download_mod_version(ver ModVersion) []string {
+	mod_version := if ver.is_incomplete { a.get_full_version(ver) } else { ver }
+
+	download_dir := os.join_path(a.mcpkg_storage_dir, mcpkg.mod_cache_dir_name)
+	if !os.exists(download_dir) {
+		os.mkdir(download_dir) or {
+			a.notifications << new_alert('high', 'Failed to create cache dir', err.msg)
+			return []string{}
+		}
+	}
+
+	mut downloaded_file_paths := []string{}
+	for file in mod_version.files {
+		file_path := os.join_path(download_dir, file.filename)
+		if os.exists(file_path) {
+			a.notifications << new_alert('low', 'Skipping unnessesary download', 'File `$file.filename` already exists in `$download_dir`.')
+		} else {
+			http.download_file(file.url, file_path) or {
+				a.notifications << new_alert('high', 'Failed to download $file.filename',
+					err.msg)
+				continue
+			}
+		}
+		downloaded_file_paths << file_path
+	}
+	println(a.notifications)
+	return downloaded_file_paths
+}
+
+fn (mut a Api) get_mod_version_for_current_branch(m Mod) ?ModVersion {
+	mod := if m.is_incomplete { a.get_full_mod(m) } else { m }
+
+	current_branch := a.branches[a.current_branch_id]
+
+	all_versions := a.get_mod_versions(mod)
+	mut compatable_versions := all_versions.filter(it.game_versions.contains(current_branch.game_version))
+	if compatable_versions.len == 0 {
+		return error(new_alert('med', 'Failed to find a ModVersion for current branch.',
+			'None of the versions support the branch\'s game version `$current_branch.game_version`.').str())
+	}
+
+	compatable_versions.sort(a.date_published > b.date_published) // Likely a redundant step
+	latest_compatable_version := compatable_versions[0]
+	return latest_compatable_version
+}
+
+// install_mod trys to install a mod for the current game branch.
+// It finds the correct ModVersion, adds version to the branch,
+// Downloads the relevent files, put them in the mod folder,
+// and finaly write the changes to the branches file.
+pub fn (mut a Api) install_mod(mod Mod) {
+	// TODO: prevent from attempting to download already installed mods
+
+	println('Installing mod $mod.name')
+
+	ver := a.get_mod_version_for_current_branch(mod) or {
+		println(a.notifications)
+		return
+	}
+
+	paths_to_move := a.download_mod_version(ver)
+
+	// TODO: replace this section with syncronize_files() after adding ver to branch?
+	mut finished_paths := []string{}
+	for path in paths_to_move {
+		target_path := os.join_path(a.mc_mods_dir, os.file_name(path))
+		os.mv(path, target_path) or {
+			a.notifications << new_alert('high', 'Failed to move file ${os.file_name(path)} to the mods dir.',
+				err.msg)
+			if finished_paths.len > 0 {
+				a.notifications << new_alert('med', 'Resetting attempted downloads', 'moving $finished_paths back to mod cache...')
+				for paths_to_reset in finished_paths {
+					reset_target_path := os.join_path(mcpkg.mod_cache_dir_name, os.file_name(paths_to_reset))
+					os.mv(paths_to_reset, reset_target_path) or {
+						a.notifications << new_alert('high', 'Failed to move file ${os.file_name(paths_to_reset)} back to the cache dir!',
+							err.msg)
+					}
+				}
+			}
+			return
+		}
+		finished_paths << target_path
+	}
+
+	a.branches[a.current_branch_id].installed_versions << ver
+
+	a.save_branches()
+
+	println('Successfuly installed $mod.name ($ver.name). \nFiles: $finished_paths')
+}
+
+// fn lock_mod(mod Mod) {} // if given mod is installed, move to branche's "locked mods"
+// fn unlock_mod(mod Mod) {}

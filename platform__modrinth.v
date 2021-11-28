@@ -149,7 +149,6 @@ fn (p PlatformModrinth) get_mod_by_id(mod_id string) ?Mod {
 	}
 
 	mut mod := Mod{
-		is_incomplete: false
 		platform: &p
 	}
 	for k, v in responce_decoded.as_map() {
@@ -236,6 +235,27 @@ fn (p PlatformModrinth) get_mod_by_id(mod_id string) ?Mod {
 			else {}
 		}
 	}
+
+	// Modrinth does not provide game version info when geting a project by id.
+	// TODO: Mesage modrinth api team about this behavior.
+	// I think the mod object should include game_versions
+	// without needing to make a second request for mod versions.
+
+	// As a work arround, we'll make a second request for all versions, and then manualy build game afterwards.
+	// TODO: to save time, start this request concurrently before the main mod request. change this line to a .wait() line.
+	versions := p.get_versions_by_mod_id(mod.id) or { []ModVersion{} }
+	mod.versions = versions // since we're here, might as well apply the versions list
+
+	mod_game_versions_2d := versions.map(it.game_versions)
+	mut mod_game_versions := []string{}
+	for v_arr in mod_game_versions_2d {
+		mod_game_versions.insert(0, v_arr.filter(it !in mod_game_versions))
+	}
+	mod_game_versions.sort(a > b)
+
+	mod.game_versions = mod_game_versions
+
+	mod.is_incomplete = false
 	return mod
 }
 

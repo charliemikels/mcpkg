@@ -1,8 +1,6 @@
 module mcpkg
 
 import x.json2
-import net.http
-import os
 import json
 
 struct Mod {
@@ -37,7 +35,7 @@ pub mut:
 // ModVersion is a specific version of a mod. Not to be confused with GameVersion
 struct ModVersion {
 mut:
-	is_incomplete  bool = true
+	is_incomplete  bool        = true
 	platform       ModPlatform = ModPlatform(PlatformDummy{})
 	id             string
 	mod            Mod
@@ -63,14 +61,17 @@ mut:
 	// primary  bool
 }
 
-// TODO: move to branches.v (or file_control.v?)
-// we want to remove "raw" downloading.
-pub fn (a Api) download_mod_version(mod_version ModVersion) {
-	for file in mod_version.files {
-		path := os.join_path(os.temp_dir(), file.filename)
-		http.download_file(file.url, path) or { panic(err) }
-		println('downloaded $file.filename')
-	}
+fn (v ModVersion) to_json() json2.Any {
+	mut json_map := map[string]json2.Any{}
+	json_map['id'] = v.id
+	json_map['platform'] = v.platform.name
+	json_map['name'] = v.name
+	json_map['number'] = v.number
+	json_map['mod_id'] = v.mod.id
+	json_map['date_published'] = v.date_published
+	json_map['files'] = v.files.map(json2.Any(it.filename))
+	// json_map['dependency_ids'] = v.dependencies.map(it.id )
+	return json_map
 }
 
 fn (mut a Api) json_to_mod(json json2.Any) Mod {
@@ -114,22 +115,11 @@ fn (a Api) json_to_mod_version(json json2.Any) ModVersion {
 			'id' { ver.id = v.str() }
 			'name' { ver.name = v.str() }
 			'number' { ver.number = v.str() }
-			'files' { ver.files = v.arr().map(a.json_to_mod_version_file(it)) }
+			// 'files' { ver.files = v.arr().map(a.json_to_mod_version_file(it)) }
+			'files' { ver.files = v.arr().map(ModVersionFile{ filename: it.str() }) }
 			// the rest can be built from a.get_full_version()
 			else {}
 		}
 	}
 	return ver
-}
-
-fn (a Api) json_to_mod_version_file(json json2.Any) ModVersionFile {
-	mut vf := ModVersionFile{}
-	for k, v in json.as_map() {
-		match k {
-			'filename' { vf.filename = v.str() }
-			// the rest can be built from a.get_full_version()
-			else {}
-		}
-	}
-	return vf
 }
