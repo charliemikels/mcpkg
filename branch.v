@@ -118,13 +118,12 @@ fn (mut a Api) json_to_branch(json json2.Any) Branch {
 pub fn (mut a Api) load_branches() {
 	branches_path := os.join_path(a.mcpkg_storage_dir, mcpkg.branches_file_name)
 	branches_str := os.read_file(branches_path) or {
-		a.notifications << new_alert('high', 'branch.json not found', err.msg)
+		a.new_alert('high', 'branch.json not found', err.msg)
 		// TODO: Create blank file?
 		return
 	}
 	branches_json := json2.raw_decode(branches_str) or {
-		a.notifications << new_alert('high', 'Failed to parse branch.json into json',
-			err.msg)
+		a.new_alert('high', 'Failed to parse branch.json into json', err.msg)
 		return
 	}
 
@@ -243,7 +242,7 @@ fn (mut a Api) download_mod_version(ver ModVersion) []string {
 	download_dir := os.join_path(a.mcpkg_storage_dir, mcpkg.mod_cache_dir_name)
 	if !os.exists(download_dir) {
 		os.mkdir(download_dir) or {
-			a.notifications << new_alert('high', 'Failed to create cache dir', err.msg)
+			a.new_alert('high', 'Failed to create cache dir', err.msg)
 			return []string{}
 		}
 	}
@@ -252,11 +251,10 @@ fn (mut a Api) download_mod_version(ver ModVersion) []string {
 	for file in mod_version.files {
 		file_path := os.join_path(download_dir, file.filename)
 		if os.exists(file_path) {
-			a.notifications << new_alert('low', 'Skipping unnessesary download', 'File `$file.filename` already exists in `$download_dir`.')
+			a.new_alert('low', 'Skipping unnessesary download', 'File `$file.filename` already exists in `$download_dir`.')
 		} else {
 			http.download_file(file.url, file_path) or {
-				a.notifications << new_alert('high', 'Failed to download $file.filename',
-					err.msg)
+				a.new_alert('high', 'Failed to download $file.filename', err.msg)
 				continue
 			}
 		}
@@ -289,8 +287,7 @@ fn (mut a Api) get_mod_version_for_current_branch(m Mod) ?ModVersion {
 // and finaly write the changes to the branches file.
 pub fn (mut a Api) install_mod(mod Mod) {
 	if mod.id in a.branches[a.current_branch_id].get_required_mods().map(it.id) {
-		a.notifications << new_alert('med', 'Mod `$mod.name` ($mod.id) is already installed.',
-			'Checking for updates...')
+		a.new_alert('med', 'Mod `$mod.name` ($mod.id) is already installed.', 'Checking for updates...')
 		// TODO: implement check for updates
 		return
 	}

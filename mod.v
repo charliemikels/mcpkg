@@ -80,7 +80,7 @@ fn (mut a Api) json_to_mod(json json2.Any) Mod {
 		match k {
 			'platform' {
 				mod.platform = a.mod_platforms[v.str()] or {
-					a.notifications << new_alert('high', 'Error loading Mod from json: No known platform `$v.str()`',
+					a.new_alert('high', 'Error loading Mod from json: No known platform `$v.str()`',
 						'`$v.str()` is not in the list of known platforms: $a.mod_platforms')
 					continue
 				}

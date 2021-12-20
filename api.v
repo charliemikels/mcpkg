@@ -149,6 +149,11 @@ pub fn (mut a Api) get_game_versions() []GameVersion {
 	return a.game_versions
 }
 
+
+pub fn (a Api) get_alerts() []Notification {
+	return a.notifications
+}
+
 fn (n Notification) str() string {
 	msg := if n.msg != '' { ' >> $n.msg' } else { '' }
 	urg := if n.urgency != '' { '[$n.urgency] ' } else { '' }
@@ -174,6 +179,11 @@ fn new_alert(level string, title string, msg string) Notification {
 		msg: msg
 		urgency: level
 	}
+}
+
+// Shorthand to generate new alerts
+fn (mut a Api) new_alert(level string, title string, msg string) {
+	a.notifications << new_alert(level, title, msg)
 }
 
 // fn new_alert_from_string
