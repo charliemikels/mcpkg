@@ -62,13 +62,13 @@ fn (p PlatformModrinth) search_for_mods(search SearchFilter, page PageInfo) ?[]M
 	config.header.add(http.CommonHeader.authorization, p.auth_key)
 
 	responce := http.fetch(config) or {
-		return error(Notification{
+		return error(Alert{
 			title: '${@FN} failed to fetch json'
 			msg: err.msg
 		}.str())
 	}
 	responce_decoded := json2.raw_decode(responce.text) or {
-		return error(Notification{
+		return error(Alert{
 			title: '${@FN} failed to decode json'
 			msg: err.msg
 		}.str())
@@ -79,7 +79,7 @@ fn (p PlatformModrinth) search_for_mods(search SearchFilter, page PageInfo) ?[]M
 	for key, val in responce_decoded.as_map() {
 		match key {
 			'error' {
-				return error(Notification{
+				return error(Alert{
 					title: 'Modrinth.${@FN} includes an error.'
 					msg: responce_decoded.as_map().str()
 				}.str())
@@ -136,13 +136,13 @@ fn (p PlatformModrinth) get_mod_by_id(mod_id string) ?Mod {
 	config.header.add(http.CommonHeader.authorization, p.auth_key)
 
 	responce := http.fetch(config) or {
-		return error(Notification{
+		return error(Alert{
 			title: '${@FN} failed to fetch json'
 			msg: err.msg
 		}.str())
 	}
 	responce_decoded := json2.raw_decode(responce.text) or {
-		return error(Notification{
+		return error(Alert{
 			title: '${@FN} failed to decode json'
 			msg: err.msg
 		}.str())
@@ -154,7 +154,7 @@ fn (p PlatformModrinth) get_mod_by_id(mod_id string) ?Mod {
 	for k, v in responce_decoded.as_map() {
 		match k {
 			'error' {
-				return error(Notification{
+				return error(Alert{
 					title: 'Modrinth.${@FN} includes an error.'
 					msg: responce_decoded.as_map().str()
 				}.str())
@@ -268,13 +268,13 @@ fn (p PlatformModrinth) get_versions_by_mod_id(mod_id string) ?[]ModVersion {
 	config.header.add(http.CommonHeader.authorization, p.auth_key)
 
 	responce := http.fetch(config) or {
-		return error(Notification{
+		return error(Alert{
 			title: '${@FN} failed to fetch json'
 			msg: err.msg
 		}.str())
 	}
 	responce_decoded := json2.raw_decode(responce.text) or {
-		return error(Notification{
+		return error(Alert{
 			title: '${@FN} failed to decode json'
 			msg: err.msg
 		}.str())
@@ -296,7 +296,7 @@ fn (p PlatformModrinth) get_versions_by_mod_id(mod_id string) ?[]ModVersion {
 		for k, v in version.as_map() {
 			match k {
 				'error' {
-					return error(Notification{
+					return error(Alert{
 						title: 'Modrinth.${@FN} includes an error.'
 						msg: responce_decoded.as_map().str()
 					}.str())
@@ -378,13 +378,13 @@ fn (p PlatformModrinth) get_version_by_id(version_id string) ?ModVersion {
 	config.header.add(http.CommonHeader.authorization, p.auth_key)
 
 	responce := http.fetch(config) or {
-		return error(Notification{
+		return error(Alert{
 			title: '${@FN} failed to fetch json'
 			msg: err.msg
 		}.str())
 	}
 	responce_decoded := json2.raw_decode(responce.text) or {
-		return error(Notification{
+		return error(Alert{
 			title: '${@FN} failed to decode json'
 			msg: err.msg
 		}.str())
@@ -398,7 +398,7 @@ fn (p PlatformModrinth) get_version_by_id(version_id string) ?ModVersion {
 	for k, v in responce_decoded.as_map() {
 		match k {
 			'error' {
-				return error(Notification{
+				return error(Alert{
 					title: 'Modrinth.${@FN} includes an error.'
 					msg: responce_decoded.as_map().str()
 				}.str())

@@ -15,10 +15,10 @@ mut:
 	current_branch_id int
 	branches          map[int]Branch
 	game_versions     []GameVersion
-	notifications     []Notification
+	alerts     []Alert
 }
 
-struct Notification {
+struct Alert {
 	title   string
 	msg     string
 	urgency string = 'low' // "low", "med", "high"
@@ -76,19 +76,14 @@ pub fn new_api() Api {
 pub fn (mut a Api) load_config_file(path string) {
 	println('Loading config file at `${os.real_path(path)}`...')
 	api_str := os.read_file(os.real_path(path)) or {
-		// TODO: a.notifications << Notificaton{...} is really large. Make a.new_notification(title, msg)
-		// TODO: rename "Notification" to "alert"? much shorter this way...
-		a.notifications << Notification{
-			title: '${@FN} failed to read a file at `${os.real_path(path)}`.'
-			msg: err.msg
+			// TODO: a.alerts << Notificaton{...} is really large. Make a.new_alert(title, msg)
+			// TODO: rename "Alert" to "alert"? much shorter this way...
+			a.new_alert('high', '${@FN} failed to read a file at `${os.real_path(path)}`.', err.msg)
 		}
 		return
 	}
 	api_decoded := json2.raw_decode(api_str) or {
-		a.notifications << Notification{
-			title: '${@FN} failed to decode json at `${os.real_path(path)}`.'
-			msg: err.msg
-		}
+		a.new_alert('high', '${@FN} failed to decode json at `${os.real_path(path)}`.', err.msg)
 		return
 	}
 	a.config_path = path
@@ -130,7 +125,7 @@ pub fn (mut a Api) initialize() {
 }
 
 fn (mut a Api) load_auth_keys() {
-	// TODO: update to notifications
+	// TODO: update to alerts
 	if os.exists(os.real_path(a.auth_keys_path)) {
 		auth_keys_json := os.read_file(os.real_path(a.auth_keys_path)) or { panic(err) }
 		auth_keys_decoded := json2.raw_decode(auth_keys_json) or { panic(err) }
@@ -150,31 +145,31 @@ pub fn (mut a Api) get_game_versions() []GameVersion {
 }
 
 
-pub fn (a Api) get_alerts() []Notification {
-	return a.notifications
+pub fn (a Api) get_alerts() []Alert {
+	return a.alerts
 }
 
-fn (n Notification) str() string {
+fn (n Alert) str() string {
 	msg := if n.msg != '' { ' >> $n.msg' } else { '' }
 	urg := if n.urgency != '' { '[$n.urgency] ' } else { '' }
 	return urg + n.title + msg
 }
 
-pub fn err_msg_to_notification(err_msg string) Notification {
+pub fn err_msg_to_alert(err_msg string) Alert {
 	urg := err_msg.find_between('[', '] ')
 	title := err_msg.all_after('[$urg] ').all_before(' >> ')
 	msg := err_msg.all_after(' >> ')
-	return Notification{
+	return Alert{
 		title: title
 		msg: msg
 		urgency: urg
 	}
 }
 
-// Shorthand to generate new alerts rather than the full Notification {.. .. ..} syntax
-fn new_alert(level string, title string, msg string) Notification {
+// Shorthand to generate new alerts rather than the full Alert {.. .. ..} syntax
+fn new_alert(level string, title string, msg string) Alert {
 	// level = quiet/log, notif(ication)/alert, warn/error
-	return Notification{
+	return Alert{
 		title: title
 		msg: msg
 		urgency: level
@@ -183,7 +178,7 @@ fn new_alert(level string, title string, msg string) Notification {
 
 // Shorthand to generate new alerts
 fn (mut a Api) new_alert(level string, title string, msg string) {
-	a.notifications << new_alert(level, title, msg)
+	a.alerts << new_alert(level, title, msg)
 }
 
 // fn new_alert_from_string

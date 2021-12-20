@@ -150,7 +150,7 @@ pub fn (mut a Api) load_branches() {
 
 	if current_branch_id !in a.branches.keys() {
 		panic('the given current_branch_id ($current_branch_id) was not found in the map of branches.')
-		// TODO: convert to notification, and create a system to handle this err
+		// TODO: convert to alert, and create a system to handle this err
 		a.current_branch_id = -1
 	} else {
 		a.current_branch_id = current_branch_id
@@ -260,7 +260,7 @@ fn (mut a Api) download_mod_version(ver ModVersion) []string {
 		}
 		downloaded_file_paths << file_path
 	}
-	println(a.notifications)
+	println(a.alerts)
 	return downloaded_file_paths
 }
 
@@ -294,7 +294,7 @@ pub fn (mut a Api) install_mod(mod Mod) {
 
 	println('Installing mod $mod.name')
 	ver := a.get_mod_version_for_current_branch(mod) or {
-		println(a.notifications)
+		println(a.alerts)
 		return
 	}
 

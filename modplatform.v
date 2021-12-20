@@ -10,10 +10,7 @@ fn (mut a Api) load_mod_platforms() {
 	mut platform_map := map[string]ModPlatform{}
 	for p in platforms {
 		if p.requires_authentication && a.auth_keys[p.name] == '' {
-			a.notifications << Notification{ // since API is already mutable, we can directly insert a notification here.
-				title: 'Platform $p.name requires authentication.'
-				msg: 'No authentication key was found for $p.name in ${a.auth_keys_path}. $p.name will be skipped.'
-			}
+			a.new_alert('high', 'Platform $p.name requires authentication.', 'No authentication key was found for $p.name in ${a.auth_keys_path}. $p.name will be skipped.')
 			continue
 		}
 		platform_map[p.name] = p
@@ -55,21 +52,18 @@ pub fn (mut a Api) search_for_mods(s SearchFilter) []Mod {
 	}
 	if s.platform_name != '' {
 		mut p := a.mod_platforms[s.platform_name] or {
-			a.notifications << Notification{
-				title: 'No platform $s.platform_name'
-				msg: 'No known platform with key `$s.platform_name`. Known keys: $a.mod_platforms.keys()'
-			}
+			a.new_alert('hight', 'No platform $s.platform_name', 'No known platform with key `$s.platform_name`. Known keys: $a.mod_platforms.keys()')
 			return []Mod{}
 		}
 		return p.search_for_mods(s, page) or {
-			a.notifications << err_msg_to_notification(err.msg)
+			a.alerts << err_msg_to_alert(err.msg)
 			return []Mod{}
 		}
 	} else {
 		mut mod_list := []Mod{}
 		for _, p in a.mod_platforms {
 			mod := p.search_for_mods(s, page) or {
-				a.notifications << err_msg_to_notification(err.msg)
+				a.alerts << err_msg_to_alert(err.msg)
 				continue
 			}
 			mod_list << mod
@@ -80,21 +74,21 @@ pub fn (mut a Api) search_for_mods(s SearchFilter) []Mod {
 
 pub fn (mut a Api) get_full_mod(mod Mod) Mod {
 	return mod.platform.get_mod_by_id(mod.id) or {
-		a.notifications << err_msg_to_notification(err.msg)
+		a.alerts << err_msg_to_alert(err.msg)
 		return mod
 	}
 }
 
 pub fn (mut a Api) get_full_version(ver ModVersion) ModVersion {
 	return ver.platform.get_version_by_id(ver.id) or {
-		a.notifications << err_msg_to_notification(err.msg)
+		a.alerts << err_msg_to_alert(err.msg)
 		return ver
 	}
 }
 
 pub fn (mut a Api) get_mod_versions(mod Mod) []ModVersion {
 	return mod.platform.get_versions_by_mod_id(mod.id) or {
-		a.notifications << err_msg_to_notification(err.msg)
+		a.alerts << err_msg_to_alert(err.msg)
 		return []ModVersion{}
 	}
 }
