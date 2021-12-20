@@ -109,10 +109,12 @@ fn (mut a Api) json_to_mod(json json2.Any) Mod {
 
 fn (a Api) json_to_mod_version(json json2.Any) ModVersion {
 	mut ver := ModVersion{}
+	mut mod_id := ""
 	for k, v in json.as_map() {
 		match k {
 			'platform' { ver.platform = a.mod_platforms[v.str()] }
 			'id' { ver.id = v.str() }
+			'mod_id' { mod_id = v.str() }
 			'name' { ver.name = v.str() }
 			'number' { ver.number = v.str() }
 			// 'files' { ver.files = v.arr().map(a.json_to_mod_version_file(it)) }
@@ -120,6 +122,11 @@ fn (a Api) json_to_mod_version(json json2.Any) ModVersion {
 			// the rest can be built from a.get_full_version()
 			else {}
 		}
+	}
+
+	ver.mod = Mod{
+		platform: ver.platform
+		id: mod_id
 	}
 	return ver
 }

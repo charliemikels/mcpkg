@@ -28,7 +28,8 @@ mut:
 
 const branches_file_name = 'branches.json'
 
-const mod_cache_dir_name = 'mod_cache'	// Move to Api? (a.paths[mod_cache])
+// vv Move to Api? (a.paths[mod_cache]) vv
+const mod_cache_dir_name = 'mod_cache'
 
 pub struct BranchConfig {
 	game_version string [required]
@@ -52,9 +53,17 @@ pub fn (mut a Api) new_branch(c BranchConfig) Branch {
 	return b
 }
 
+fn (b Branch) get_required_mod_versions() []ModVersion {
+	return b.installed_versions // TODO: + b.locked_versions // Question: Include dependencies?
+}
+
+fn (b Branch) get_required_mods() []Mod {
+	return b.get_required_mod_versions().map(it.mod)
+}
+
 // get_required_file_names is a shortcut to get every file name required by a branch
 fn (b Branch) get_required_file_names() []string {
-	required_mod_versions := b.installed_versions // TODO: + b.locked_versions
+	required_mod_versions := b.get_required_mod_versions()
 	// required_mod_version_files := required_mod_versions.map(it.files)	// Actualy returns [][]ModVersionFile ([[file1],[file2],[file3]])
 	// required_mod_version_file_names := required_mod_version_files.map(it.map(it.filename)) // Actualy returns [][]string ([[file1],[file2],[file3]])
 
@@ -279,10 +288,14 @@ fn (mut a Api) get_mod_version_for_current_branch(m Mod) ?ModVersion {
 // Downloads the relevent files, put them in the mod folder,
 // and finaly write the changes to the branches file.
 pub fn (mut a Api) install_mod(mod Mod) {
-	// TODO: prevent from attempting to download already installed mods
+	if mod.id in a.branches[a.current_branch_id].get_required_mods().map(it.id) {
+		a.notifications << new_alert('med', 'Mod `$mod.name` ($mod.id) is already installed.',
+			'Checking for updates...')
+		// TODO: implement check for updates
+		return
+	}
 
 	println('Installing mod $mod.name')
-
 	ver := a.get_mod_version_for_current_branch(mod) or {
 		println(a.notifications)
 		return
@@ -290,33 +303,13 @@ pub fn (mut a Api) install_mod(mod Mod) {
 
 	paths_to_move := a.download_mod_version(ver)
 
-	// TODO: replace this section with syncronize_files() after adding ver to branch?
-	mut finished_paths := []string{}
-	for path in paths_to_move {
-		target_path := os.join_path(a.mc_mods_dir, os.file_name(path))
-		os.mv(path, target_path) or {
-			a.notifications << new_alert('high', 'Failed to move file ${os.file_name(path)} to the mods dir.',
-				err.msg)
-			if finished_paths.len > 0 {
-				a.notifications << new_alert('med', 'Resetting attempted downloads', 'moving $finished_paths back to mod cache...')
-				for paths_to_reset in finished_paths {
-					reset_target_path := os.join_path(mcpkg.mod_cache_dir_name, os.file_name(paths_to_reset))
-					os.mv(paths_to_reset, reset_target_path) or {
-						a.notifications << new_alert('high', 'Failed to move file ${os.file_name(paths_to_reset)} back to the cache dir!',
-							err.msg)
-					}
-				}
-			}
-			return
-		}
-		finished_paths << target_path
-	}
+	a.syncronize_local_files()
 
 	a.branches[a.current_branch_id].installed_versions << ver
 
 	a.save_branches()
 
-	println('Successfuly installed $mod.name ($ver.name). \nFiles: $finished_paths')
+	println('Successfuly installed $mod.name ($ver.name).')
 }
 
 // fn lock_mod(mod Mod) {} // if given mod is installed, move to branche's "locked mods"
