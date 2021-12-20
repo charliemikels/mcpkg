@@ -109,7 +109,7 @@ fn (mut a Api) json_to_mod(json json2.Any) Mod {
 
 fn (a Api) json_to_mod_version(json json2.Any) ModVersion {
 	mut ver := ModVersion{}
-	mut mod_id := ""
+	mut mod_id := ''
 	for k, v in json.as_map() {
 		match k {
 			'platform' { ver.platform = a.mod_platforms[v.str()] }

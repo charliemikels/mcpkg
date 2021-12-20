@@ -15,7 +15,7 @@ mut:
 	current_branch_id int
 	branches          map[int]Branch
 	game_versions     []GameVersion
-	alerts     []Alert
+	alerts            []Alert
 }
 
 struct Alert {
@@ -76,14 +76,13 @@ pub fn new_api() Api {
 pub fn (mut a Api) load_config_file(path string) {
 	println('Loading config file at `${os.real_path(path)}`...')
 	api_str := os.read_file(os.real_path(path)) or {
-			// TODO: a.alerts << Notificaton{...} is really large. Make a.new_alert(title, msg)
-			// TODO: rename "Alert" to "alert"? much shorter this way...
-			a.new_alert('high', '${@FN} failed to read a file at `${os.real_path(path)}`.', err.msg)
-		}
+		a.new_alert('high', '${@FN} failed to read a file at `${os.real_path(path)}`.',
+			err.msg)
 		return
 	}
 	api_decoded := json2.raw_decode(api_str) or {
-		a.new_alert('high', '${@FN} failed to decode json at `${os.real_path(path)}`.', err.msg)
+		a.new_alert('high', '${@FN} failed to decode json at `${os.real_path(path)}`.',
+			err.msg)
 		return
 	}
 	a.config_path = path
@@ -143,7 +142,6 @@ pub fn (mut a Api) get_game_versions() []GameVersion {
 	}
 	return a.game_versions
 }
-
 
 pub fn (a Api) get_alerts() []Alert {
 	return a.alerts

@@ -29,7 +29,7 @@ fn (mut a Api) get_remote_game_versions() []GameVersion {
 		url: 'https://api.modrinth.com/api/v1/tag/game_version'
 	}
 	responce := http.fetch(config) or {
-		a.notifications << new_alert('high', 'HTTP fetch failed', 'Could not connect to `$config.url`.')
+		a.new_alert('high', 'HTTP fetch failed', 'Could not connect to `$config.url`.')
 		return []
 	}
 	// responce is a json array.
@@ -55,7 +55,7 @@ fn (mut a Api) get_remote_game_versions() []GameVersion {
 			} else if v[0] == `r` {
 				'rd'
 			} else {
-				a.notifications << new_alert('low', 'Version type parser failed', 'Could not parse the version type of version `$v` (#$i).')
+				a.new_alert('low', 'Version type parser failed', 'Could not parse the version type of version `$v` (#$i).')
 				'other'
 			}
 		}
@@ -114,4 +114,13 @@ fn is_release(version string) bool {
 // 		}
 // 	}
 // 	return r
+// }
+
+// fn compare_game_version_strings(a string, b string) {
+// 	if a < b {
+// 		return -1
+// 	} else if a.name > b.name {
+// 		return 1
+// 	}
+// 	return 0
 // }
