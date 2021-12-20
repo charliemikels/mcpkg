@@ -28,7 +28,7 @@ mut:
 
 const branches_file_name = 'branches.json'
 
-const mod_cache_dir_name = 'mod_cache'
+const mod_cache_dir_name = 'mod_cache'	// Move to Api? (a.paths[mod_cache])
 
 pub struct BranchConfig {
 	game_version string [required]
@@ -50,6 +50,22 @@ pub fn (mut a Api) new_branch(c BranchConfig) Branch {
 		a.save_branches()
 	}
 	return b
+}
+
+// get_required_file_names is a shortcut to get every file name required by a branch
+fn (b Branch) get_required_file_names() []string {
+	required_mod_versions := b.installed_versions // TODO: + b.locked_versions
+	// required_mod_version_files := required_mod_versions.map(it.files)	// Actualy returns [][]ModVersionFile ([[file1],[file2],[file3]])
+	// required_mod_version_file_names := required_mod_version_files.map(it.map(it.filename)) // Actualy returns [][]string ([[file1],[file2],[file3]])
+
+	mut required_file_names := []string{}
+	for mod_ver in required_mod_versions {
+		for mod_ver_file in mod_ver.files {
+			required_file_names << mod_ver_file.filename
+		}
+	}
+
+	return required_file_names
 }
 
 fn (mut a Api) next_branch_id() int {
@@ -143,18 +159,6 @@ pub fn (mut a Api) set_current_branch(branch_id int) {
 	a.syncronize_local_files()
 }
 
-// syncronize_local_files TODO: Docs for syncronize_local_files
-pub fn (mut a Api) syncronize_local_files() {
-	// get list of file names required by installed mods in new branch
-	// move any mod that is not in the list to mod_cache
-	// move any mod that is in cache and in the list to mods dir
-	// check if all mods in "installed mods" is present.
-	// If yes, we're done.
-	// If not, we're missing mods. Ask user to re-download their mods with their platforms.
-	// If this process fails, ask user to re-sync branch files.
-	// Actualy this whole logic block should go into it's own syncronize_files fn
-}
-
 pub fn (a Api) save_branches() {
 	mut branches_arr := []Branch{}
 	for _, b in a.branches {
@@ -173,6 +177,53 @@ pub fn (a Api) save_branches() {
 		panic(err)
 	}
 }
+
+// syncronize_local_files moves all files not required by the current branch from the mods_dir to mods_cache,
+// and moves all required files found in mod_cache to mods_dir.
+// TODO: Also create syncronize_remote_files?
+pub fn (mut a Api) syncronize_local_files() {
+	// TODO: a lot of panic() calls. upgrade safely handle
+	if !os.exists(os.join_path(a.mcpkg_storage_dir, mcpkg.mod_cache_dir_name)) {
+		os.mkdir(os.join_path(a.mcpkg_storage_dir, mcpkg.mod_cache_dir_name)) or { panic(err) }
+	}
+
+	required_files := a.branches[a.current_branch_id].get_required_file_names()
+
+	files_in_mods_dir := os.ls(a.mc_mods_dir) or { panic(err) }
+	non_required_files_in_mods_dir := files_in_mods_dir.filter(!required_files.contains(it))
+
+	files_in_cache := os.ls(os.join_path(a.mcpkg_storage_dir, mcpkg.mod_cache_dir_name)) or {
+		panic(err)
+	}
+	required_files_in_cache := files_in_cache.filter(required_files.contains(it)
+		&& !files_in_mods_dir.contains(it))
+
+	for file_name in non_required_files_in_mods_dir {
+		os.mv(os.join_path(a.mc_mods_dir, file_name), os.join_path(a.mcpkg_storage_dir,
+			mcpkg.mod_cache_dir_name, file_name)) or { panic(err) }
+	}
+
+	for file_name in required_files_in_cache {
+		os.mv(os.join_path(a.mcpkg_storage_dir, mcpkg.mod_cache_dir_name, file_name),
+			os.join_path(a.mc_mods_dir, file_name)) or { panic(err) }
+	}
+}
+
+// fn (a Api) check_for_missing_mods() []ModVersion {
+// 	required_file_names := a.branches[a.current_branch_id].get_required_file_names()
+//
+// 	files_in_mods_dir := os.ls(a.mc_mods_dir) or { panic(err) }
+// 	mut missing_file_names :=
+//
+// 	for filename in required_file_names {
+// 		if !( filename in files_in_mods_dir ) {
+// 			missing_versions << filename
+// 		}
+// 	}
+//
+// 	mut missing_versions := []ModVersion{}
+// 	return missing_versions
+// }
 
 // a.clean_mod_cache() // Search every branch. if a mod in cache isn't needed by any branch, remove it.
 // a.wipe_mod_cache()  // Delete contents of mod_cache
